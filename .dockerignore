@@ -1,0 +1,6 @@
+**
+!integrations/
+!integrations/hermes/
+!integrations/hermes/**
+integrations/hermes/__pycache__/
+integrations/hermes/*.pyc

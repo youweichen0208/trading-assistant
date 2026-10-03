@@ -1,0 +1,36 @@
+model:
+  default: glm-5.3
+  provider: custom
+  base_url: http://litellm:4000/v1
+  api_key_env: YOUWEI_ASSISTANT_LLM_KEY
+agent:
+  max_turns: 20
+platform_toolsets:
+  api_server: [web, memory, youwei-assistant]
+plugins:
+  enabled: [youwei-assistant]
+web:
+  search_backend: ddgs
+  extract_backend: youwei-public-page
+  keyless_fallback: false
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  memory_char_limit: 2200
+  user_char_limit: 1375
+auxiliary:
+  background_review:
+    enabled: false
+gateway:
+  api_server:
+    max_concurrent_runs: 1
+platforms:
+  api_server:
+    enabled: true
+    host: 0.0.0.0
+    port: 8642
+    model_name: Hermes 美股助手
+    tool_progress_events: false
+tools:
+  tool_search:
+    enabled: "off"

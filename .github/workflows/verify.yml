@@ -1,0 +1,20 @@
+name: verify
+on: [push, pull_request]
+jobs:
+  assistant:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install fixed uv
+        run: pipx install uv==0.11.16
+      - run: uv sync --frozen --group dev --python 3.14.7
+      - run: uv run --frozen pytest -q
+      - name: Install fixed Hermes in isolated environment
+        run: |
+          git init /tmp/hermes
+          git -C /tmp/hermes remote add origin https://github.com/NousResearch/hermes-agent
+          git -C /tmp/hermes fetch --depth 1 origin 7fa45eb349a1a6f1eebc010b3fef0a9d996f386a
+          git -C /tmp/hermes checkout FETCH_HEAD
+          uv sync --project /tmp/hermes --frozen --no-dev --extra messaging --extra ddgs --python 3.14.7
+      - run: /tmp/hermes/.venv/bin/python ops/verify_assistant_native.py /tmp/hermes
+      - run: docker build -f infra/images/hermes-assistant.Dockerfile -t trading-assistant:ci .

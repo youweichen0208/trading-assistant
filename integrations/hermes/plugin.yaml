@@ -1,0 +1,5 @@
+name: youwei-assistant
+version: 1.0.0
+description: Personal US equities assistant with bounded knowledge and Core HTTP tools.
+provides_web_providers:
+  - youwei-public-page
