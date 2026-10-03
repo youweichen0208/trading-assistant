@@ -19,8 +19,10 @@
 - `docker build -f infra/images/hermes-assistant.Dockerfile -t trading-assistant:split-verification .`：成功，构建上下文仅本仓库，使用固定基础镜像与 Hermes frozen 锁，复用对应固定构建缓存。
 - `/tmp/youwei-assistant-hermes/.venv/bin/python ops/verify_assistant_native.py /tmp/youwei-assistant-hermes`：PASS，脚本先校验 upstream 完整 SHA；发现、401 鉴权、429 并发拒绝、流断开恢复、非法请求、平台调用身份、知识保存/跨聊天读取/修订/删除、完整历史/SSE、memory、备份/恢复/重启通过。使用真实固定 Hermes 和 mock 模型，不依赖平台源码。
 
-跨服务组合验收由平台执行：`uv run --frozen python ops/verify_assistant_webui.py --assistant-image trading-assistant:split-verification` → PASS（固定 WebUI v0.6.36、旧聊天、追问/SSE、知识、重启、后台普通模型分流与镜像内无网络恢复）；详情记录于平台 S12f。CI 已配置独立安装、pytest、原生验收与镜像构建；本地执行结果不等同于远程 CI 运行结果。
+跨服务组合验收由平台执行：`uv run --frozen python ops/verify_assistant_webui.py --assistant-image trading-assistant:split-verification` → PASS（固定 WebUI v0.6.36、旧聊天、追问/SSE、知识、重启、后台普通模型分流与镜像内无网络恢复）；详情记录于平台 S12g。CI 已配置独立安装、pytest、原生验收与镜像构建；本地执行结果不等同于远程 CI 运行结果。
 
 未验收：目标机 amd64 镜像、资源和生产数据恢复、浏览器真实操作、真实付费模型、正式前向评估。未发布镜像、未切换生产、未修改 WebUI fork。
 
 首次 GitHub CI 在安装解释器时失败：固定 uv 的内置下载清单找不到 3.14.7。CI 改用现有 Dockerfile 同一固定 Python 基础镜像运行测试；Docker 构建单独作业。未更换上游、Python 或 uv 版本。
+
+修正后的 [GitHub CI](https://github.com/youweichen0208/trading-assistant/actions/runs/37143835375)（源码 `5279deaa3f40b4f07a0036d2fc63eb08247b1d97`）通过：独立依赖安装、12 项测试、固定 Hermes 原生验收及 Linux amd64 镜像构建。CI 构建未推送 registry，不等于目标机验收。后续提交仅同步文档中的平台 S12g 记录编号及此验收证据。
