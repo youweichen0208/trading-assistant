@@ -107,3 +107,11 @@ python /opt/youwei-assistant/backup.py verify /tmp/hermes-data.tar.gz --destinat
 
 `policy` 维护工具允许列表；`bootstrap` 负责 profile 安装与原生发现的连接清理；`registration` 注册工具，`handlers` 执行平台/知识调用并绑定运行身份。EODHD 查询约束与脱敏留在 `eodhd`。容器入口和原生验证共用这些实现。
 平台与助手各自保留小型 mock 模型，维持独立测试；这不构成生产实现共享或兄弟目录依赖。
+
+## WebUI 工作台的只读技能服务
+
+同一个助手镜像可另外启动 `python /opt/youwei-assistant/workbench.py`，默认监听 8643，使用 `API_SERVER_KEY` 鉴权。仅暴露 `GET /skills` 与 `GET /skills/{name}`，复用固定 Hermes 的目录/正文读取函数，明确传入 `preprocess=False`，不会执行技能内联 shell 或调用模型。
+
+部署时只读挂载现有 `hermes_profile`，不传模型、Core 或 EODHD 密钥，不暴露宿主端口。WebUI 负责登录与指定所有者鉴权。平台提供可选 `infra/compose/chat-workbench.json` 接线；本次源码和镜像验证不代表 VM 已部署。
+
+此接口绕开固定 Release 原生 `/v1/skills` 的 `include_editorial` 参数不匹配问题，未修改上游源码。技能编辑/自我改进审批与消息平台配置不在此只读服务中开放。
