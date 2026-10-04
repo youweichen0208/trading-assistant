@@ -1,0 +1,1374 @@
+{
+  "get_historical_stock_prices": {
+    "properties": {
+      "ticker": {
+        "type": "string",
+        "description": "Symbol in SYMBOL.EXCHANGE format, e.g. 'AAPL.US'."
+      },
+      "start_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "'from' date in YYYY-MM-DD. If omitted, API returns full history (plan limits apply)."
+      },
+      "end_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "'to' date in YYYY-MM-DD. If omitted, API returns up to most recent."
+      },
+      "period": {
+        "default": "d",
+        "type": "string",
+        "description": "'d' (daily), 'w' (weekly), 'm' (monthly). Default 'd'."
+      },
+      "order": {
+        "default": "a",
+        "type": "string",
+        "description": "'a' (ascending) or 'd' (descending). Default 'a'."
+      },
+      "fmt": {
+        "default": "json",
+        "type": "string",
+        "description": "'json' or 'csv'. Default 'json'. (API default is csv.)"
+      },
+      "filter": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "e.g., 'last_close', 'last_volume' (works with fmt=json; returns a single value)."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Override API token for this call. If not provided, env token is used."
+      }
+    },
+    "required": [
+      "ticker"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_live_price_data": {
+    "properties": {
+      "ticker": {
+        "type": "string",
+        "description": "Primary symbol in SYMBOL.EXCHANGE format (e.g., 'AAPL.US').\n          Required and placed in the path, per API spec."
+      },
+      "additional_symbols": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Extra symbols for 's=' query param,\n          comma-separated by the tool (e.g., ['VTI', 'EUR.FOREX']).\n          Docs recommend <= 15\u201320 total."
+      },
+      "fmt": {
+        "default": "json",
+        "type": "string",
+        "description": "'json' or 'csv'. Defaults to 'json' for easier client handling."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call token override. If omitted, env token is used."
+      }
+    },
+    "required": [
+      "ticker"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_intraday_historical_data": {
+    "properties": {
+      "ticker": {
+        "type": "string",
+        "description": "SYMBOL.EXCHANGE_ID, e.g. 'AAPL.US'."
+      },
+      "interval": {
+        "default": "5m",
+        "type": "string",
+        "description": "One of {'1m','5m','1h'}. Default '5m'."
+      },
+      "from_timestamp": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Start as Unix seconds OR a date string\n(auto-detected). Examples: 1704067200, '2024-01-01', '01-01-24', '01/01/2024',\n'2024-01-01T15:30:00Z', 'Jan 1, 2024'."
+      },
+      "to_timestamp": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "End as Unix seconds OR a date string (auto-detected)."
+      },
+      "fmt": {
+        "default": "json",
+        "type": "string",
+        "description": "'json' or 'csv'. Default 'json'."
+      },
+      "split_dt": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": false,
+        "description": "If True, adds 'split-dt=1' to split date/time fields."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call token override; env token used if omitted."
+      }
+    },
+    "required": [
+      "ticker"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_company_news": {
+    "properties": {
+      "ticker": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "SYMBOL.EXCHANGE_ID (e.g., 'AAPL.US'). Mapped to 's'."
+      },
+      "tag": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Topic tag (e.g., 'technology'). Mapped to 't'."
+      },
+      "start_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "YYYY-MM-DD. Mapped to 'from'."
+      },
+      "end_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "YYYY-MM-DD. Mapped to 'to'."
+      },
+      "limit": {
+        "default": 50,
+        "type": "integer",
+        "description": "1..1000 (default 50)."
+      },
+      "offset": {
+        "default": 0,
+        "type": "integer",
+        "description": ">= 0 (default 0)."
+      },
+      "fmt": {
+        "default": "json",
+        "type": "string",
+        "description": "'json' or 'xml' (default 'json')."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call token override; env token used if omitted."
+      }
+    },
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_sentiment_data": {
+    "properties": {
+      "symbols": {
+        "type": "string",
+        "description": "One or more comma-separated tickers (e.g., 'AAPL.US,BTC-USD.CC')."
+      },
+      "start_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "YYYY-MM-DD, maps to 'from'."
+      },
+      "end_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "YYYY-MM-DD, maps to 'to'."
+      },
+      "fmt": {
+        "default": "json",
+        "type": "string",
+        "description": "'json' (default). (XML not documented for this endpoint.)"
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call override; env token used if omitted."
+      }
+    },
+    "required": [
+      "symbols"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_news_word_weights": {
+    "properties": {
+      "ticker": {
+        "type": "string",
+        "description": "Symbol to analyze (e.g., 'AAPL.US'); mapped to 's'."
+      },
+      "start_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "YYYY-MM-DD; mapped to filter[date_from]."
+      },
+      "end_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "YYYY-MM-DD; mapped to filter[date_to]."
+      },
+      "limit": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Number of top words; mapped to page[limit]."
+      },
+      "fmt": {
+        "default": "json",
+        "type": "string",
+        "description": "'json' (default). (CSV/XML not documented for this endpoint.)"
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call token override."
+      }
+    },
+    "required": [
+      "ticker"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_stocks_from_search": {
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Ticker, company name, or ISIN to search (e.g., 'AAPL', 'Apple Inc', 'US0378331005')."
+      },
+      "limit": {
+        "default": 15,
+        "type": "integer",
+        "description": "Number of results (default 15, max 500)."
+      },
+      "bonds_only": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "If True, return only bonds."
+      },
+      "exchange": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Exchange code filter (e.g., 'US', 'PA', 'FOREX', 'NYSE')."
+      },
+      "type": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "One of {'all','stock','etf','fund','bond','index','crypto'}."
+      },
+      "fmt": {
+        "default": "json",
+        "type": "string",
+        "description": "Must be 'json'."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call API token override (demo token does NOT work for Search)."
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_historical_dividends": {
+    "properties": {
+      "ticker": {
+        "type": "string",
+        "description": "Symbol in SYMBOL.EXCHANGE format, e.g. 'AAPL.US'."
+      },
+      "start_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "'from' date in YYYY-MM-DD."
+      },
+      "end_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "'to' date in YYYY-MM-DD."
+      },
+      "fmt": {
+        "default": "json",
+        "type": "string",
+        "description": "'json' only."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call token override."
+      }
+    },
+    "required": [
+      "ticker"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_historical_splits": {
+    "properties": {
+      "ticker": {
+        "type": "string",
+        "description": "Symbol in SYMBOL.EXCHANGE format, e.g. 'AAPL.US'."
+      },
+      "start_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "'from' date in YYYY-MM-DD."
+      },
+      "end_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "'to' date in YYYY-MM-DD."
+      },
+      "fmt": {
+        "default": "json",
+        "type": "string",
+        "description": "'json' only."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call token override."
+      }
+    },
+    "required": [
+      "ticker"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_historical_commodity_prices": {
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "Commodity code (e.g. 'WTI', 'BRENT', 'URANIUM') or 'ALL_COMMODITIES'.\nCase-insensitive; normalized to upper case."
+      },
+      "interval": {
+        "default": "monthly",
+        "type": "string",
+        "description": "Data frequency \u2014 'daily', 'weekly', 'monthly' (default),\n'quarterly', or 'annual'. Daily data is only available for energy commodities."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call token override."
+      }
+    },
+    "required": [
+      "code"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "capture_realtime_ws": {
+    "properties": {
+      "feed": {
+        "type": "string",
+        "description": "One of {'us_trades','us_quotes','us_candles','us_status',\n'eu_trades','eu_quotes','eu_candles','eu_status','forex','crypto'}."
+      },
+      "symbols": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        ],
+        "description": "Single or comma-separated symbols, or a list.\nUS equities use plain tickers ('AAPL'); European equities use\nTICKER.EXCHANGE ('GSK.LSE'). For a European dual-class ticker the\nun-hyphenated alias is accepted too, and the reply always reports the\ncanonical hyphenated form in 's'.\nReturns:"
+      },
+      "duration_seconds": {
+        "default": 5,
+        "type": "integer"
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "max_messages": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "ping_interval": {
+        "default": 20.0,
+        "type": "number"
+      },
+      "ping_timeout": {
+        "default": 20.0,
+        "type": "number"
+      },
+      "connect_timeout": {
+        "default": 15.0,
+        "type": "number"
+      },
+      "max_data_bytes": {
+        "default": 52428800,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "feed",
+      "symbols"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "stock_screener": {
+    "properties": {
+      "filters": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "items": {},
+              "type": "array"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "signals": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "sort": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "limit": {
+        "default": 50,
+        "type": "integer"
+      },
+      "offset": {
+        "default": 0,
+        "type": "integer"
+      },
+      "fmt": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      }
+    },
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_technical_indicators": {
+    "properties": {
+      "ticker": {
+        "type": "string"
+      },
+      "function": {
+        "type": "string"
+      },
+      "start_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "end_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "order": {
+        "default": "a",
+        "type": "string"
+      },
+      "fmt": {
+        "default": "json",
+        "type": "string"
+      },
+      "filter": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "splitadjusted_only": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "period": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "agg_period": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "fast_kperiod": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "slow_kperiod": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "slow_dperiod": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "fast_dperiod": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "fast_period": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "slow_period": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "signal_period": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "acceleration": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "maximum": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "code2": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      }
+    },
+    "required": [
+      "ticker",
+      "function"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_us_live_extended_quotes": {
+    "properties": {
+      "symbols": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        ],
+        "description": "A single comma-separated string or a sequence of tickers (e.g., [\"AAPL.US\",\"TSLA.US\"])."
+      },
+      "fmt": {
+        "default": "json",
+        "type": "string",
+        "description": "'json' (default) or 'csv'."
+      },
+      "page_limit": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Optional page size; max 100."
+      },
+      "page_offset": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Optional offset for pagination; must be >= 0."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Optional token; if omitted, env is used via make_request()."
+      }
+    },
+    "required": [
+      "symbols"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_ust_bill_rates": {
+    "properties": {
+      "year": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Filter by year (1900+). Defaults to current year."
+      },
+      "limit": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Records per page."
+      },
+      "offset": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Pagination offset."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call token override."
+      }
+    },
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_ust_yield_rates": {
+    "properties": {
+      "year": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Filter by year (1900+). Defaults to current year."
+      },
+      "limit": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Maximum records returned."
+      },
+      "offset": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Number of records to skip."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call token override."
+      }
+    },
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_ust_real_yield_rates": {
+    "properties": {
+      "year": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Filter by year (1900 to current+1). Defaults to current year."
+      },
+      "limit": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Maximum records returned."
+      },
+      "offset": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Number of records to skip."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call token override; env token used otherwise."
+      }
+    },
+    "type": "object",
+    "additionalProperties": false
+  },
+  "get_ust_long_term_rates": {
+    "properties": {
+      "year": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Filter by year (1900 to current+1). Defaults to current year."
+      },
+      "limit": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Records per page."
+      },
+      "offset": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Pagination offset."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call token override; env token used otherwise."
+      }
+    },
+    "type": "object",
+    "additionalProperties": false
+  },
+  "resolve_ticker": {
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Company name, partial ticker, or ISIN to resolve."
+      },
+      "preferred_exchange": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Exchange code to prefer (e.g. \"US\", \"XETRA\", \"LSE\")."
+      },
+      "asset_type": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Filter by type: \"stock\", \"etf\", \"fund\", \"bond\", \"index\", \"crypto\"."
+      },
+      "api_token": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Per-call API token override."
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "type": "object",
+    "additionalProperties": false
+  }
+}

@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import traceback
-from datetime import date
+from datetime import date, datetime, timezone
 from urllib.parse import quote, quote_plus
 
 
@@ -50,18 +50,40 @@ def execute_query(name, args, next_call):
         return json.dumps({'error': 'EODHD credentials are server-managed; token overrides are not allowed'})
     args = dict(args)
     tool = name.removeprefix('mcp__eodhd__')
-    if tool == 'get_historical_stock_prices':
-        try:
+    try:
+        dated = {'get_historical_stock_prices', 'get_historical_dividends',
+                 'get_historical_splits', 'get_technical_indicators',
+                 'get_sentiment_data', 'get_news_word_weights'}
+        if tool in dated or (tool == 'get_company_news' and
+                             any(k in args for k in ('start_date', 'end_date'))):
             start, end = (date.fromisoformat(args[k]) for k in ('start_date', 'end_date'))
             if end < start:
-                raise ValueError
-        except (KeyError, TypeError, ValueError):
-            return json.dumps({'error': 'historical prices require explicit start_date/end_date (YYYY-MM-DD), in order'})
-    if tool == 'get_company_news':
-        args.setdefault('limit', 10)
-    if tool == 'get_fundamentals_data' and not args.get('sections'):
-        args['sections'] = ['General', 'Highlights', 'Valuation']
-        args['include_financials'] = False
+                raise ValueError('dates must be in order')
+        if tool == 'get_intraday_historical_data':
+            def timestamp(value):
+                if type(value) is int:
+                    return datetime.fromtimestamp(value, timezone.utc)
+                parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+                return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed
+            if timestamp(args['to_timestamp']) < timestamp(args['from_timestamp']):
+                raise ValueError('timestamps must be in order')
+        if tool.startswith('get_ust_'):
+            year = args['year']
+            if type(year) is not int or not 1900 <= year <= date.today().year + 1:
+                raise ValueError('explicit integer year required')
+        limits = {}
+        if tool in {'get_company_news', 'stock_screener', 'get_news_word_weights'}:
+            limits['limit'] = (10, 50, int)
+        if tool == 'capture_realtime_ws':
+            limits = {'duration_seconds': (5, 10, int), 'max_messages': (100, 100, int),
+                      'max_data_bytes': (1048576, 1048576, int),
+                      'connect_timeout': (5, 5, (int, float))}
+        for field, (default, maximum, types) in limits.items():
+            value = args.setdefault(field, default)
+            if isinstance(value, bool) or not isinstance(value, types) or not 0 < value <= maximum:
+                raise ValueError(field + ' exceeds query policy or has invalid type')
+    except (KeyError, TypeError, ValueError, OverflowError, AttributeError):
+        return json.dumps({'error': 'EODHD query requires explicit ordered dates/year and bounded numeric limits'})
     try:
         return redact(next_call(args))
     except Exception as exc:

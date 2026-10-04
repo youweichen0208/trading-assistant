@@ -52,3 +52,13 @@
 - 固定官方 checkout 的 `ops/verify_assistant_native.py`：PASS（鉴权、并发、流式、历史、memory、知识、备份恢复、重启；七工具 MCP、越界、凭证、脱敏、403/429/超时及离线启动）。
 - `docker build -f infra/images/hermes-assistant.Dockerfile -t trading-assistant:refactor .`：本机 arm64 构建通过，无平台源码依赖。
 - Hermes SHA、基础镜像、开发锁、工具名称、环境变量和备份格式保持原值。本轮未操作 VM，未调用真实付费模型或真实供应商查询；跨服务候选验收由平台记录。
+
+## 2026-10-05 EODHD Extended 候选（生产切换阻断）
+
+- 默认允许列表扩为 19 项，移除基本面/财报日历；基础五工具、官方 Hermes/Python/依赖锁保持原值。日期/年份、新闻及筛选数量、WebSocket 时长/消息数/字节数/连接超时在插件执行边界验证，凭证仅由服务端提供。
+- TDD：新增允许工具测试先出现 1 项失败；查询限制测试出现 19 项失败；响应验收测试先因缺少实现失败。最终 `uv run --frozen pytest -q` 50 passed。
+- 固定 checkout 的 `ops/verify_assistant_native.py`：19 工具循环、鉴权、允许列表、凭证/脱敏、403/429/超时/离线启动及原有流式/历史/记忆/备份恢复 PASS。
+- `docker build -f infra/images/hermes-assistant.Dockerfile -t trading-assistant:eodhd-extended-candidate .`：arm64 独立构建通过。`docker run --rm --network none -v "$PWD:/verification:ro" --entrypoint python trading-assistant:eodhd-extended-candidate /verification/ops/verify_assistant_native.py /opt/hermes`：PASS，使用真实官方 schema 的 mock MCP；逐文件核对镜像内插件与验收源码一致。断流用例的 mock HTTP BrokenPipe 日志是预期关闭连接，不是验收失败。
+- VM 现有 Key 通过官方远端 `tools/list` 发现 93 项，19 项目标 schema 已存 `ops/eodhd-schemas.json`。`ops/verify_eodhd_live.py` 按实际业务结构、证券及日期校验：15 项有效；盘中历史/技术指标/筛选为 subscription_denied；BTC-USD crypto WebSocket 为 connection_failed。没有合法空结果、限流或参数错误。
+- 旧验收只看 MCP isError，会把技术指标/筛选嵌套 JSON 的 403 当成成功；本次增加解包与回归测试并重新运行所有查询。两项国债接口忽略 limit=1，分别返回指定年份内 1330/570 行，报告显式标记 limit_ignored。
+- 全部真实调用只使用供应商查询，无付费模型。账户权限与实时采集未通过，按任务约束暂停生产切换，不删去失败工具。发布候选的源码、amd64 registry digest、跨服务结果由平台 `docs/ops/eodhd-extended-20261005.md` 记录；这不授予候选生产就绪状态。

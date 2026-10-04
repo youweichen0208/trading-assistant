@@ -19,7 +19,7 @@ def verify():
         install_profile(home)
     from model_tools import handle_function_call
     with discovered_tools() as names:
-        assert names == BASE_TOOLS | MCP_TOOLS, 'seven MCP tools must be discoverable at release acceptance'
+        assert names == BASE_TOOLS | MCP_TOOLS, 'all configured MCP tools must be discoverable at release acceptance'
         result = handle_function_call('mcp__eodhd__get_live_price_data', {'ticker': 'AAPL.US'},
                                       enabled_tools=sorted(names))
         payload = json.loads(result)

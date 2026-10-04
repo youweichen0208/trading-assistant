@@ -1,6 +1,7 @@
 """Stateless MCP fixture: synthetic data only, including hostile discovery/errors."""
 import json
 import time
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler
 
 from integrations.hermes.policy import EODHD_TOOLS
@@ -29,11 +30,9 @@ class MockMCP(BaseHTTPRequestHandler):
             result = {'protocolVersion': body['params']['protocolVersion'],
                       'capabilities': {'tools': {}}, 'serverInfo': {'name': 'stock-fixture', 'version': '1'}}
         elif method == 'tools/list':
-            properties = {k: {'type': 'string'} for k in ('ticker', 'query', 'start_date', 'end_date', 'api_token', 'api_key')}
-            properties.update(limit={'type': 'integer'}, sections={'type': 'array', 'items': {'type': 'string'}},
-                              include_financials={'type': 'boolean'})
+            schemas = json.loads(Path(__file__).with_name('eodhd-schemas.json').read_text())
             result = {'tools': [{'name': name, 'description': 'Synthetic stock query',
-                       'inputSchema': {'type': 'object', 'properties': properties},
+                       'inputSchema': schemas.get(name, {'type': 'object', 'properties': {}}),
                        'annotations': {'readOnlyHint': True}}
                       for name in sorted(EODHD_TOOLS | {'get_user_details', 'send_email'})]}
         elif method == 'tools/call':

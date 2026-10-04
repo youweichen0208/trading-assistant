@@ -4,6 +4,7 @@ Run with that checkout's Python 3.13. Starts a real native gateway and a mock
 OpenAI endpoint; never loads production keys or calls a paid model.
 """
 import argparse
+from datetime import date
 import json
 import os
 from pathlib import Path
@@ -31,12 +32,22 @@ def free_port():
 
 from assistant_mock_model import MockModel
 from assistant_mock_mcp import MockMCP, TOKEN
+from verify_eodhd_live import probe_queries
 from integrations.hermes.policy import BASE_TOOLS, MCP_TOOLS, EODHD_TOOLS
 
 
 def verify(checkout):
     from integrations.hermes.bootstrap import load_profile_config
-    assert subprocess.check_output(['git', '-C', str(checkout), 'rev-parse', 'HEAD'], text=True).strip() == json.loads((ROOT/'upstreams.lock.json').read_text())['hermes']['revision']
+    expected = json.loads((ROOT/'upstreams.lock.json').read_text())
+    if (checkout / '.git').exists():
+        assert subprocess.check_output(['git', '-C', str(checkout), 'rev-parse', 'HEAD'], text=True).strip() == expected['hermes']['revision']
+    else:
+        assert checkout == Path('/opt/hermes'), 'only the fixed image runtime may omit .git'
+        installed = Path('/opt/youwei-assistant')
+        assert json.loads((installed/'upstreams.lock.json').read_text()) == expected
+        for source in (ROOT/'integrations/hermes').iterdir():
+            if source.is_file():
+                assert (installed/source.name).read_bytes() == source.read_bytes(), source.name
     model = ThreadingHTTPServer(('127.0.0.1', 0), MockModel)
     threading.Thread(target=model.serve_forever, daemon=True).start()
     mcp = ThreadingHTTPServer(('127.0.0.1', 0), MockMCP)
@@ -97,7 +108,12 @@ def verify(checkout):
                 failed_submit = call('youwei_platform', {'action':'submit','arguments':{'ticker':'AAPL','horizon_td':20}})
                 assert isinstance(failed_submit, dict) and 'transport failure' in failed_submit['error'], failed_submit
                 for name in sorted(MCP_TOOLS):
-                    result = call(name, {'ticker':'AAPL.US', 'query':'Apple', 'start_date':'2026-10-01', 'end_date':'2026-10-02'})
+                    args = probe_queries(date(2026, 10, 4))[name.removeprefix('mcp__eodhd__')]
+                    if name == 'mcp__eodhd__get_company_news':
+                        args.pop('limit')
+                    if name == 'mcp__eodhd__capture_realtime_ws':
+                        args = {'feed': 'crypto', 'symbols': ['BTC-USD']}
+                    result = call(name, args)
                     assert 'stock-data' in json.dumps(result), result
                 tool_sets = [set(a['tools']) for a in MockModel.audits if a['tools']]
                 assert tool_sets and all(names == BASE_TOOLS | MCP_TOOLS for names in tool_sets), tool_sets
@@ -107,6 +123,15 @@ def verify(checkout):
                 for ticker, expected in [('DENIED','403'),('LIMITED','429')]:
                     result = call('mcp__eodhd__get_live_price_data', {'ticker':ticker})
                     assert expected in json.dumps(result) and TOKEN not in json.dumps(result), result
+                for tool, args in [('stock_screener', {'limit': 51}),
+                                   ('capture_realtime_ws', {'duration_seconds': 11}),
+                                   ('get_intraday_historical_data', {})]:
+                    count = len(MockMCP.calls)
+                    assert 'error' in call('mcp__eodhd__' + tool, args)
+                    assert len(MockMCP.calls) == count
+                capture = next(c for c in MockMCP.calls if c['name'] == 'capture_realtime_ws')
+                assert capture['arguments']['max_data_bytes'] == 1048576
+                assert capture['arguments']['duration_seconds'] == 5
                 news = next(c for c in MockMCP.calls if c['name'] == 'get_company_news')
                 assert news['arguments']['limit'] == 10
                 malformed = client.post('/v1/chat/completions', json={'messages':[]})
@@ -161,7 +186,7 @@ def verify(checkout):
                 assert call('youwei_knowledge', {'action':'search','arguments':{'query':'marker'}}) == []
                 log.flush(); log.seek(0)
                 assert TOKEN not in log.read()
-                print('PASS native auth/concurrency/stream/history/memory/knowledge/backup/restore/restart; MCP seven-tool loop/allowlist/credentials/redaction/403/429/timeout/offline startup')
+                print('PASS native auth/concurrency/stream/history/memory/knowledge/backup/restore/restart; MCP nineteen-tool loop/allowlist/credentials/redaction/403/429/timeout/offline startup')
         except Exception:
             log.flush(); log.seek(0); print(log.read()[-10000:]); raise
         finally:
