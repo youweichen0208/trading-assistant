@@ -4,3 +4,6 @@
 !integrations/hermes/**
 integrations/hermes/__pycache__/
 integrations/hermes/*.pyc
+!infra/
+!infra/ddgs-requirements.txt
+!upstreams.lock.json
