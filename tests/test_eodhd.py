@@ -4,7 +4,8 @@ import logging
 import pytest
 
 from integrations.hermes import tool_boundary
-from integrations.hermes.eodhd import BASE_TOOLS, MCP_TOOLS, validate_tools, install_secret_redaction
+from integrations.hermes.policy import BASE_TOOLS, MCP_TOOLS, validate_tools
+from integrations.hermes.eodhd import install_secret_redaction
 
 
 def invoke(name, args, handler=lambda args: json.dumps(args)):

@@ -8,7 +8,7 @@
 | trading-assistant | gateway、平台 HTTP 工具、memory/知识、助手镜像和原生测试 |
 | [youwei-trading-agent](https://github.com/youweichen0208/youwei-trading-agent) | Core/Controller/Runner、研究实验 Hermes、正式评估、跨服务兼容与部署备份调度 |
 
-本仓库开发、测试和构建不需要平台源码或兄弟目录。Core 仅通过 HTTP 访问。
+本仓库默认协作分支为 `develop`，变更通过 PR 合入；删除原 `main` 分支，其提交历史由 `develop` 保留。开发、测试和构建不需要平台源码或兄弟目录。Core 仅通过 HTTP 访问。
 
 ## 独立开发与验证
 
@@ -73,9 +73,9 @@ uv --no-config pip install --python /tmp/hermes-native/.venv/bin/python --requir
 
 构建上下文仅本仓库。服务名仍为 `hermes-assistant`；入口 `/opt/youwei-assistant/entrypoint.py`，固定上游环境 `/opt/hermes`。挂载路径 `/var/lib/hermes/profile`、`/var/lib/hermes/knowledge` 及 UID/GID 10001 不变。
 
-必填环境：`API_SERVER_KEY`、`YOUWEI_ASSISTANT_LLM_KEY`、`YOUWEI_ASSISTANT_CORE_KEY`、`YOUWEI_ASSISTANT_CORE_URL`。配置默认模型出口为 `http://litellm:4000/v1`。完整配置与允许列表见 [config.yaml](integrations/hermes/config.yaml)、[入口](integrations/hermes/entrypoint.py)。密钥只通过受控运行配置交付，不能提交到仓库或镜像。
+必填环境：`API_SERVER_KEY`、`YOUWEI_ASSISTANT_LLM_KEY`、`YOUWEI_ASSISTANT_CORE_KEY`、`YOUWEI_ASSISTANT_CORE_URL`。配置默认模型出口为 `http://litellm:4000/v1`。基础配置见 [config.yaml](integrations/hermes/config.yaml)，唯一工具允许列表见 [policy.py](integrations/hermes/policy.py)。bootstrap 生成 MCP 配置并验证原生发现，entrypoint 只负责启动；不要直接复制未展开政策的模板作为运行 profile。密钥只通过受控运行配置交付，不能提交到仓库或镜像。
 
-运行限制、Compose 网络与资源、WebUI 单所有者切换、整体恢复操作由[平台手册](https://github.com/youweichen0208/youwei-trading-agent/blob/main/docs/ops/hermes-personal-assistant.md)维护。
+运行限制、Compose 网络与资源、WebUI 单所有者切换、整体恢复操作由[平台手册](https://github.com/youweichen0208/youwei-trading-agent/blob/develop/docs/ops/hermes-personal-assistant.md)维护。
 
 每次交付分别记录：本仓库完整 commit、Hermes 上游 SHA、Python/uv 基础镜像 digest、构建架构与镜像 ID、发布后的 registry digest、原生验收证据。源码提交和本地 image ID 不等于已发布镜像；平台登记消费助手 commit 和发布 digest，再验证兼容组合。个人助手升级可独立进行；研究/实验 Hermes 的归因补丁和 ResearchRelease 仍由平台管理。
 
@@ -102,3 +102,8 @@ python /opt/youwei-assistant/backup.py verify /tmp/hermes-data.tar.gz --destinat
 2026-10-04：按用户选择将个人助手对齐官方 Release；该 Release 的 Python 上界为 `<3.14`，个人助手独立环境因此采用 3.13。平台 Core 与研究 Hermes 的版本由平台分别维护，本次不变。镜像标签 `io.youwei.hermes.revision` / `io.youwei.hermes.release` 及 `/opt/youwei-assistant/upstreams.lock.json` 记录来源。
 
 该官方 Release 自带 DDGS provider，但没有后来增加的 `ddgs` extra；为保持现有免 key 搜索，构建时单独安装带 SHA256 的四项固定依赖（DDGS 9.16.0 / primp 2.0.0 / lxml 6.1.2 / click 8.4.2），版本与前一已验证镜像一致，click 与 Release 锁一致。上游 pyproject/uv.lock 不修改，运行时仍禁止 lazy installs。
+
+## 实现维护
+
+`policy` 维护工具允许列表；`bootstrap` 负责 profile 安装与原生发现的连接清理；`registration` 注册工具，`handlers` 执行平台/知识调用并绑定运行身份。EODHD 查询约束与脱敏留在 `eodhd`。容器入口和原生验证共用这些实现。
+平台与助手各自保留小型 mock 模型，维持独立测试；这不构成生产实现共享或兄弟目录依赖。

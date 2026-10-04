@@ -31,11 +31,11 @@ def free_port():
 
 from assistant_mock_model import MockModel
 from assistant_mock_mcp import MockMCP, TOKEN
-from integrations.hermes.eodhd import BASE_TOOLS, MCP_TOOLS, EODHD_TOOLS
+from integrations.hermes.policy import BASE_TOOLS, MCP_TOOLS, EODHD_TOOLS
 
 
 def verify(checkout):
-    from ruamel.yaml import YAML
+    from integrations.hermes.bootstrap import load_profile_config
     assert subprocess.check_output(['git', '-C', str(checkout), 'rev-parse', 'HEAD'], text=True).strip() == json.loads((ROOT/'upstreams.lock.json').read_text())['hermes']['revision']
     model = ThreadingHTTPServer(('127.0.0.1', 0), MockModel)
     threading.Thread(target=model.serve_forever, daemon=True).start()
@@ -44,7 +44,7 @@ def verify(checkout):
     with tempfile.TemporaryDirectory(prefix='youwei-native-', dir='/tmp') as tmp:
         root = Path(tmp); home = root/'profile'; home.mkdir()
         shutil.copytree(ROOT/'integrations/hermes', home/'plugins/youwei-assistant')
-        config = YAML(typ='safe').load((ROOT/'integrations/hermes/config.yaml').read_text())
+        config = load_profile_config(mcp_enabled=True)
         port = free_port()
         assert set(config['mcp_servers']['eodhd']['tools']['include']) == EODHD_TOOLS
         config['mcp_servers']['eodhd']['url'] = f'http://127.0.0.1:{mcp.server_port}/mcp'

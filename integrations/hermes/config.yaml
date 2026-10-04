@@ -14,17 +14,7 @@ mcp_servers:
       Authorization: "Bearer ${EODHD_API_KEY}"
     connect_timeout: 10
     timeout: 30
-    tools:
-      include:
-        - resolve_ticker
-        - get_stocks_from_search
-        - get_historical_stock_prices
-        - get_live_price_data
-        - get_fundamentals_data
-        - get_company_news
-        - get_upcoming_earnings
-      resources: false
-      prompts: false
+    # Tool include/resources/prompts policy is applied by bootstrap.py.
 plugins:
   enabled: [youwei-assistant]
 web:

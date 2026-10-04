@@ -32,3 +32,16 @@ def test_report_ownership_error_and_path_boundary():
     with pytest.raises(ValueError):
         client.call('report', {'research_id': '../../admin/tenants'})
     assert len(seen) == 1
+
+
+def test_status_and_explicit_cancel_use_same_persistent_research():
+    seen = []
+    def handler(request):
+        seen.append((request.method, request.url.path))
+        return httpx.Response(200, json={'status': 'cancelled' if request.method == 'POST' else 'running'})
+    client = PlatformClient('http://core', 'key', transport=httpx.MockTransport(handler))
+    research_id = '62c544b6-8501-49b0-bf91-831985ac4a9d'
+    assert client.call('status', {'research_id': research_id})['status'] == 'running'
+    assert seen == [('GET', f'/v1/research/{research_id}')]
+    assert client.call('cancel', {'research_id': research_id})['status'] == 'cancelled'
+    assert seen[-1] == ('POST', f'/v1/research/{research_id}/cancel')

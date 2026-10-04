@@ -44,3 +44,11 @@
 - MCP 依赖由上游原始 frozen lock 的 `mcp` extra 安装，Hermes SHA、Python 基线不变，无上游补丁。插件使用该 Release 的正式 MCP 模块导入路径；早期验收捕获的 deprecated-import 拒载已修复。
 - VM 官方 MCP v1 握手、93 工具发现和七项有界只读请求完成：搜索、代码解析、历史行情、最新报价、新闻成功；基本面与财报日历为 subscription_denied。后两项不能宣称数据可用，不自动采购。未调用真实付费模型。
 - 生产部署、镜像 digest、跨服务与恢复结果由平台的本次 EODHD 发布记录维护；本文件的本地通过不代替生产验收。
+
+## 2026-10-04 模块重构（候选，未部署）
+
+- 工具允许列表集中到 policy；profile 安装和原生发现集中到 bootstrap；注册与调用处理分离。
+- `uv run --frozen pytest -q`：24 passed。
+- 固定官方 checkout 的 `ops/verify_assistant_native.py`：PASS（鉴权、并发、流式、历史、memory、知识、备份恢复、重启；七工具 MCP、越界、凭证、脱敏、403/429/超时及离线启动）。
+- `docker build -f infra/images/hermes-assistant.Dockerfile -t trading-assistant:refactor .`：本机 arm64 构建通过，无平台源码依赖。
+- Hermes SHA、基础镜像、开发锁、工具名称、环境变量和备份格式保持原值。本轮未操作 VM，未调用真实付费模型或真实供应商查询；跨服务候选验收由平台记录。

@@ -3,7 +3,7 @@ import json
 import time
 from http.server import BaseHTTPRequestHandler
 
-from integrations.hermes.eodhd import EODHD_TOOLS
+from integrations.hermes.policy import EODHD_TOOLS
 
 TOKEN = 'mock-eodhd-secret-123456789'
 
