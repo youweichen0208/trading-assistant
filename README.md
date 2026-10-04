@@ -73,7 +73,7 @@ uv --no-config pip install --python /tmp/hermes-native/.venv/bin/python --requir
 
 构建上下文仅本仓库。服务名仍为 `hermes-assistant`；入口 `/opt/youwei-assistant/entrypoint.py`，固定上游环境 `/opt/hermes`。挂载路径 `/var/lib/hermes/profile`、`/var/lib/hermes/knowledge` 及 UID/GID 10001 不变。
 
-必填环境：`API_SERVER_KEY`、`YOUWEI_ASSISTANT_LLM_KEY`、`YOUWEI_ASSISTANT_CORE_KEY`、`YOUWEI_ASSISTANT_CORE_URL`。配置默认模型出口为 `http://litellm:4000/v1`。完整配置与允许列表见 [config.yaml](integrations/hermes/config.yaml)、[入口](integrations/hermes/entrypoint.py)。密钥只通过受控运行配置交付，不能提交到仓库或镜像。
+必填环境：`API_SERVER_KEY`、`YOUWEI_ASSISTANT_LLM_KEY`、`YOUWEI_ASSISTANT_CORE_KEY`、`YOUWEI_ASSISTANT_CORE_URL`。配置默认模型出口为 `http://litellm:4000/v1`。基础配置见 [config.yaml](integrations/hermes/config.yaml)，唯一工具允许列表见 [policy.py](integrations/hermes/policy.py)。bootstrap 生成 MCP 配置并验证原生发现，entrypoint 只负责启动；不要直接复制未展开政策的模板作为运行 profile。密钥只通过受控运行配置交付，不能提交到仓库或镜像。
 
 运行限制、Compose 网络与资源、WebUI 单所有者切换、整体恢复操作由[平台手册](https://github.com/youweichen0208/youwei-trading-agent/blob/main/docs/ops/hermes-personal-assistant.md)维护。
 
@@ -102,3 +102,8 @@ python /opt/youwei-assistant/backup.py verify /tmp/hermes-data.tar.gz --destinat
 2026-10-04：按用户选择将个人助手对齐官方 Release；该 Release 的 Python 上界为 `<3.14`，个人助手独立环境因此采用 3.13。平台 Core 与研究 Hermes 的版本由平台分别维护，本次不变。镜像标签 `io.youwei.hermes.revision` / `io.youwei.hermes.release` 及 `/opt/youwei-assistant/upstreams.lock.json` 记录来源。
 
 该官方 Release 自带 DDGS provider，但没有后来增加的 `ddgs` extra；为保持现有免 key 搜索，构建时单独安装带 SHA256 的四项固定依赖（DDGS 9.16.0 / primp 2.0.0 / lxml 6.1.2 / click 8.4.2），版本与前一已验证镜像一致，click 与 Release 锁一致。上游 pyproject/uv.lock 不修改，运行时仍禁止 lazy installs。
+
+## 实现维护
+
+`policy` 维护工具允许列表；`bootstrap` 负责 profile 安装与原生发现的连接清理；`registration` 注册工具，`handlers` 执行平台/知识调用并绑定运行身份。EODHD 查询约束与脱敏留在 `eodhd`。容器入口和原生验证共用这些实现。
+平台与助手各自保留小型 mock 模型，维持独立测试；这不构成生产实现共享或兄弟目录依赖。
