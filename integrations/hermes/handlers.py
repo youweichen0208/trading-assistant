@@ -42,5 +42,3 @@ def knowledge_handler(args, **kwargs):
         return json.dumps(getattr(store, action)(**args.get('arguments', {})), ensure_ascii=False)
     except (KeyError, ValueError, TypeError, OSError):
         return json.dumps({'error': 'knowledge operation rejected: check ID, required fields, size, existence and current hash'})
-
-

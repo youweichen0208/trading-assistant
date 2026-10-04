@@ -11,5 +11,3 @@ def validate_tools(names):
     names = set(names)
     if not BASE_TOOLS <= names or not names <= BASE_TOOLS | MCP_TOOLS:
         raise ValueError('assistant tool allowlist did not load safely')
-
-
