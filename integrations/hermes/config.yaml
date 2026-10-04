@@ -6,7 +6,25 @@ model:
 agent:
   max_turns: 20
 platform_toolsets:
-  api_server: [web, memory, youwei-assistant]
+  api_server: [web, memory, youwei-assistant, eodhd]
+mcp_servers:
+  eodhd:
+    url: https://mcp.eodhd.com/v1/mcp
+    headers:
+      Authorization: "Bearer ${EODHD_API_KEY}"
+    connect_timeout: 10
+    timeout: 30
+    tools:
+      include:
+        - resolve_ticker
+        - get_stocks_from_search
+        - get_historical_stock_prices
+        - get_live_price_data
+        - get_fundamentals_data
+        - get_company_news
+        - get_upcoming_earnings
+      resources: false
+      prompts: false
 plugins:
   enabled: [youwei-assistant]
 web:

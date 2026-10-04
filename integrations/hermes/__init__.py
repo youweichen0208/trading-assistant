@@ -6,14 +6,17 @@ from pathlib import Path
 
 from .knowledge import KnowledgeStore
 from .core_client import PlatformClient
+from .eodhd import BASE_TOOLS, MCP_TOOLS, execute_query, install_secret_redaction
 
 _identity = contextvars.ContextVar('youwei_call_identity', default=None)
-ALLOWED_TOOLS = frozenset({'web_search', 'web_extract', 'memory', 'youwei_platform', 'youwei_knowledge'})
+ALLOWED_TOOLS = BASE_TOOLS | MCP_TOOLS
 
 
 def tool_boundary(*, tool_name, args, next_call, session_id=None, turn_id=None, tool_call_id=None, **kwargs):
     if tool_name not in ALLOWED_TOOLS:
         return json.dumps({'error': 'tool is not allowed in the personal assistant'})
+    if tool_name in MCP_TOOLS:
+        return execute_query(tool_name, args, next_call)
     token = _identity.set((session_id, turn_id, tool_call_id))
     try:
         return next_call(args)
@@ -50,6 +53,7 @@ def _schema(name, description, actions, properties):
 
 
 def register(ctx):
+    install_secret_redaction()
     from .web import register_extract_provider
     register_extract_provider(ctx)
     ctx.register_middleware('tool_execution', tool_boundary)

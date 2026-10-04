@@ -18,7 +18,7 @@ uv run --frozen pytest -q
 docker build -f infra/images/hermes-assistant.Dockerfile -t trading-assistant:verification .
 ```
 
-开发锁 `uv.lock` 只覆盖插件测试；运行镜像使用 `upstreams.lock.json` 记录的 Hermes 完整 SHA 和其原生 frozen 锁（messaging extra 与单独固定的 DDGS 可选依赖）。Python/uv 基础镜像 digest 固定在 Dockerfile；不把 Core 或研究环境依赖引入本仓库。
+开发锁 `uv.lock` 只覆盖插件测试；运行镜像使用 `upstreams.lock.json` 记录的 Hermes 完整 SHA 和其原生 frozen 锁（messaging/mcp extras 与单独固定的 DDGS 可选依赖）。Python/uv 基础镜像 digest 固定在 Dockerfile；不把 Core 或研究环境依赖引入本仓库。
 
 原生验收需要单独的固定 Hermes checkout，其安装方式：
 
@@ -27,7 +27,7 @@ git init /tmp/hermes-native
 git -C /tmp/hermes-native remote add origin https://github.com/NousResearch/hermes-agent
 git -C /tmp/hermes-native fetch --depth 1 origin f97608f178d1ffeca59860195ab7da295f7c8e5f
 git -C /tmp/hermes-native checkout FETCH_HEAD
-uv sync --project /tmp/hermes-native --frozen --no-dev --extra messaging --python 3.13
+uv sync --project /tmp/hermes-native --frozen --no-dev --extra messaging --extra mcp --python 3.13
 uv --no-config pip install --python /tmp/hermes-native/.venv/bin/python --require-hashes --no-deps -r infra/ddgs-requirements.txt
 /tmp/hermes-native/.venv/bin/python ops/verify_assistant_native.py /tmp/hermes-native
 ```
@@ -38,14 +38,26 @@ uv --no-config pip install --python /tmp/hermes-native/.venv/bin/python --requir
 
 `Open WebUI（平台当前 v0.11.4）→ Hermes 原生 Chat Completions gateway → LiteLLM glm-5.3 / 搜索网页 / Core HTTP / 个人知识`
 
-- Hermes 使用官方 **v2026.9.24 / v0.21.5**，固定 `f97608f178d1ffeca59860195ab7da295f7c8e5f`，独立 Python 3.13.16。镜像安装其原有锁中的 `messaging` extra 与 `infra/ddgs-requirements.txt` 中带 hash 的 DDGS 可选依赖，无上游补丁。入口长期运行 `hermes gateway run`，每轮原生 Agent 循环，不执行逐消息 CLI。
-- [配置](integrations/hermes/config.yaml) 的 API 并发为 1，工具为 `web_search`、`web_extract`、`memory`、`youwei_platform`、`youwei_knowledge`。关闭 Tool Search 延迟装配、后台 review；启动时校验实际工具集合，失败即退出；容器启用 init 回收子进程，禁用运行时 lazy installs。插件执行中间件再次限制工具名。无终端、通用文件、代码执行、浏览器、调度或自动技能安装工具。
+- Hermes 使用官方 **v2026.9.24 / v0.21.5**，固定 `f97608f178d1ffeca59860195ab7da295f7c8e5f`，独立 Python 3.13.16。镜像安装其原有锁中的 `messaging` / `mcp` extras 与 `infra/ddgs-requirements.txt` 中带 hash 的 DDGS 可选依赖，无上游补丁。入口长期运行 `hermes gateway run`，每轮原生 Agent 循环，不执行逐消息 CLI。
+- [配置](integrations/hermes/config.yaml) 的 API 并发为 1，基础工具为 `web_search`、`web_extract`、`memory`、`youwei_platform`、`youwei_knowledge`，另加七项 EODHD MCP 查询工具。关闭 Tool Search 延迟装配、后台 review；启动时要求基础工具完整且全部工具处于允许列表，EODHD 离线仍允许基础助手启动，越界即退出。容器启用 init 回收子进程，禁用运行时 lazy installs。插件执行中间件再次限制工具名。无终端、通用文件、代码执行、浏览器、调度或自动技能安装工具。
 - 搜索为固定版 DDGS 9.16.0。该版本配置示例提及的 `native` 提取器实际未注册；本项目通过插件注册 `youwei-public-page`，直接读取公共 HTML/text，复用上游连接时 DNS/IP 校验的 SSRF 客户端（包含重定向检查）。不使用付费源或匿名第三方提取代理。最多 5 URL、每页 2 MB / 30s 读取检查、正文 15000 字；PDF、动态页面不声称已完整读取。外层 Hermes 提取超时仍生效。查询时间随正文返回，发布日期须从材料本身核实。
-- Core key 和专用 LiteLLM key 仅供助手服务使用；不挂数据库凭证、供应商 key 或 Docker socket。模型参数不接受 tenant 或任意 HTTP URL。当前单所有者，同一 profile 供跨聊天复用；不支持多用户共享个人记忆。
+- Core key 和专用 LiteLLM key 仅供助手服务使用；额外持有 EODHD 查询 key，不挂数据库凭证或 Docker socket。模型参数不接受 tenant 或任意 HTTP URL。当前单所有者，同一 profile 供跨聊天复用；不支持多用户共享个人记忆。
 - 原生流式对话依赖请求消息历史。前端停止/断线不能被描述为 Core 任务已取消；普通聊天不保证重启后自动续跑。Core 已受理的任务仍由 Worker 持久执行，显式取消走任务接口。
 - 正式 Campaign/Controller/Runner/研究实例不共享个人 profile、memory 或知识卷。本轮没有修改预测协议、批准 release、正式模型或训练配置；默认模型沿用已有 glm-5.3，不构成候选模型比较。
 
 ## 平台与知识接口
+
+### EODHD 个人查询
+
+个人查询通过 Hermes 原生 HTTP MCP 客户端直接连接 `https://mcp.eodhd.com/v1/mcp`。服务名 `eodhd`，仅开放 `resolve_ticker`、`get_stocks_from_search`、`get_historical_stock_prices`、`get_live_price_data`、`get_fundamentals_data`、`get_company_news`、`get_upcoming_earnings`；模型工具名为 `mcp__eodhd__<name>`。关闭 resources/prompts 自动工具，不自动接纳新增工具。
+
+`EODHD_API_KEY` 仅注入助手运行环境，配置以变量引用 Authorization Bearer header；不放入 URL、镜像或模型参数。未设置 key 时禁用 MCP，便于隔离恢复。拒绝工具参数覆盖凭证；返回内容与 Python 日志脱敏。连接超时 10s，查询超时 30s，沿用上游连接恢复及退避。
+
+公司名称先解析，美股默认 US；历史行情必须给日期区间，新闻默认 10 条，基本面默认 General/Highlights/Valuation，需要财报时显式请求 Financials。回答区分数据日期、币种、来源和实际时效，不声称所有报价实时。个人查询不自动进入 Core PIT 快照、Ledger 或 ResearchRelease。
+
+原生验收包含 mock MCP 与 mock 模型。真实只读验证：通过私密环境注入 key 后运行 `python ops/verify_eodhd_live.py`，每项能力一次有界请求，仅输出状态及 schema hash。套餐拒绝会返回非零，不代表接线失败或允许自动采购。2026-10-04 VM 实测搜索、解析、历史、报价、新闻可用；基本面与财报日历被当前套餐拒绝。
+
+### Core 接口
 
 `GET /v1/data/daily-bars?ticker=AAPL&start_date=2026-09-01&end_date=2026-09-30[&as_of=…Z]`
 

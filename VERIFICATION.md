@@ -37,3 +37,10 @@
 - 首次尝试原有 `--extra ddgs` 被官方 Release 拒绝（未定义该 extra）。改为单独固定该可选 provider 的依赖；四个版本来自前一已验证 Hermes 锁，click 版本与此 Release 完全相同。没有修改上游依赖锁或源码。
 
 本段记录提交前验证；目标 amd64 镜像、WebUI v0.11.4 组合、旧数据副本及生产切换由平台后续验收，最终部署证据保存在平台 `docs/ops/hermes-release-20260924-rollout.md`。旧段中的“未发布/未部署”是当时历史状态。
+# EODHD MCP 接入（2026-10-04）
+
+- `uv run --frozen pytest -q`：20 passed。新增允许列表、凭证覆盖拒绝、日期要求、默认新闻数量、错误和日志脱敏、启动边界测试。
+- `/tmp/youwei-hermes-release-20260924/.venv/bin/python ops/verify_assistant_native.py /tmp/youwei-hermes-release-20260924`：PASS。真实固定 Hermes + mock MCP/model，覆盖七工具循环、明确允许列表、403/429/超时、凭证保护、MCP 离线启动，以及原有鉴权/并发/流式/历史/知识/memory/备份恢复/重启。
+- MCP 依赖由上游原始 frozen lock 的 `mcp` extra 安装，Hermes SHA、Python 基线不变，无上游补丁。插件使用该 Release 的正式 MCP 模块导入路径；早期验收捕获的 deprecated-import 拒载已修复。
+- VM 官方 MCP v1 握手、93 工具发现和七项有界只读请求完成：搜索、代码解析、历史行情、最新报价、新闻成功；基本面与财报日历为 subscription_denied。后两项不能宣称数据可用，不自动采购。未调用真实付费模型。
+- 生产部署、镜像 digest、跨服务与恢复结果由平台的本次 EODHD 发布记录维护；本文件的本地通过不代替生产验收。

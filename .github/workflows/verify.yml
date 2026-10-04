@@ -18,7 +18,7 @@ jobs:
           git -C /tmp/hermes remote add origin https://github.com/NousResearch/hermes-agent
           git -C /tmp/hermes fetch --depth 1 origin f97608f178d1ffeca59860195ab7da295f7c8e5f
           git -C /tmp/hermes checkout FETCH_HEAD
-          uv sync --project /tmp/hermes --frozen --no-dev --extra messaging --python 3.13.16
+          uv sync --project /tmp/hermes --frozen --no-dev --extra messaging --extra mcp --python 3.13.16
           uv --no-config pip install --python /tmp/hermes/.venv/bin/python --require-hashes --no-deps -r infra/ddgs-requirements.txt
       - run: /tmp/hermes/.venv/bin/python ops/verify_assistant_native.py /tmp/hermes
   image:
