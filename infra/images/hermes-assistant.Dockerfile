@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends git ca-certific
 WORKDIR /opt/hermes
 COPY infra/ddgs-requirements.txt /opt/ddgs-requirements.txt
 RUN uv sync --frozen --no-dev --extra messaging --python /usr/local/bin/python && \
-    uv pip install --python .venv/bin/python --require-hashes --no-deps -r /opt/ddgs-requirements.txt && rm -rf .git
+    uv --no-config pip install --python .venv/bin/python --require-hashes --no-deps -r /opt/ddgs-requirements.txt && rm -rf .git
 FROM ${PYTHON_IMAGE}
 ARG HERMES_REVISION
 LABEL io.youwei.hermes.revision="${HERMES_REVISION}" io.youwei.hermes.release="v2026.9.24"

@@ -28,7 +28,7 @@ git -C /tmp/hermes-native remote add origin https://github.com/NousResearch/herm
 git -C /tmp/hermes-native fetch --depth 1 origin f97608f178d1ffeca59860195ab7da295f7c8e5f
 git -C /tmp/hermes-native checkout FETCH_HEAD
 uv sync --project /tmp/hermes-native --frozen --no-dev --extra messaging --python 3.13
-uv pip install --python /tmp/hermes-native/.venv/bin/python --require-hashes --no-deps -r infra/ddgs-requirements.txt
+uv --no-config pip install --python /tmp/hermes-native/.venv/bin/python --require-hashes --no-deps -r infra/ddgs-requirements.txt
 /tmp/hermes-native/.venv/bin/python ops/verify_assistant_native.py /tmp/hermes-native
 ```
 
