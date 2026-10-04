@@ -8,7 +8,7 @@
 | trading-assistant | gateway、平台 HTTP 工具、memory/知识、助手镜像和原生测试 |
 | [youwei-trading-agent](https://github.com/youweichen0208/youwei-trading-agent) | Core/Controller/Runner、研究实验 Hermes、正式评估、跨服务兼容与部署备份调度 |
 
-本仓库开发、测试和构建不需要平台源码或兄弟目录。Core 仅通过 HTTP 访问。
+本仓库默认协作分支为 `develop`，变更通过 PR 合入；原 `main` 保留历史。开发、测试和构建不需要平台源码或兄弟目录。Core 仅通过 HTTP 访问。
 
 ## 独立开发与验证
 
@@ -75,7 +75,7 @@ uv --no-config pip install --python /tmp/hermes-native/.venv/bin/python --requir
 
 必填环境：`API_SERVER_KEY`、`YOUWEI_ASSISTANT_LLM_KEY`、`YOUWEI_ASSISTANT_CORE_KEY`、`YOUWEI_ASSISTANT_CORE_URL`。配置默认模型出口为 `http://litellm:4000/v1`。基础配置见 [config.yaml](integrations/hermes/config.yaml)，唯一工具允许列表见 [policy.py](integrations/hermes/policy.py)。bootstrap 生成 MCP 配置并验证原生发现，entrypoint 只负责启动；不要直接复制未展开政策的模板作为运行 profile。密钥只通过受控运行配置交付，不能提交到仓库或镜像。
 
-运行限制、Compose 网络与资源、WebUI 单所有者切换、整体恢复操作由[平台手册](https://github.com/youweichen0208/youwei-trading-agent/blob/main/docs/ops/hermes-personal-assistant.md)维护。
+运行限制、Compose 网络与资源、WebUI 单所有者切换、整体恢复操作由[平台手册](https://github.com/youweichen0208/youwei-trading-agent/blob/develop/docs/ops/hermes-personal-assistant.md)维护。
 
 每次交付分别记录：本仓库完整 commit、Hermes 上游 SHA、Python/uv 基础镜像 digest、构建架构与镜像 ID、发布后的 registry digest、原生验收证据。源码提交和本地 image ID 不等于已发布镜像；平台登记消费助手 commit 和发布 digest，再验证兼容组合。个人助手升级可独立进行；研究/实验 Hermes 的归因补丁和 ResearchRelease 仍由平台管理。
 
