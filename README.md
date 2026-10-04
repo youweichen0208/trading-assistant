@@ -13,21 +13,22 @@
 ## 独立开发与验证
 
 ```bash
-uv sync --frozen --group dev --python 3.14.7
+uv sync --frozen --group dev --python 3.13
 uv run --frozen pytest -q
 docker build -f infra/images/hermes-assistant.Dockerfile -t trading-assistant:verification .
 ```
 
-开发锁 `uv.lock` 只覆盖插件测试；运行镜像使用 `upstreams.lock.json` 记录的 Hermes 完整 SHA 和其原生 frozen 锁（messaging/ddgs extras）。Python/uv 基础镜像 digest 固定在 Dockerfile；不把 Core 或研究环境依赖引入本仓库。
+开发锁 `uv.lock` 只覆盖插件测试；运行镜像使用 `upstreams.lock.json` 记录的 Hermes 完整 SHA 和其原生 frozen 锁（messaging extra 与单独固定的 DDGS 可选依赖）。Python/uv 基础镜像 digest 固定在 Dockerfile；不把 Core 或研究环境依赖引入本仓库。
 
 原生验收需要单独的固定 Hermes checkout，其安装方式：
 
 ```bash
 git init /tmp/hermes-native
 git -C /tmp/hermes-native remote add origin https://github.com/NousResearch/hermes-agent
-git -C /tmp/hermes-native fetch --depth 1 origin 7fa45eb349a1a6f1eebc010b3fef0a9d996f386a
+git -C /tmp/hermes-native fetch --depth 1 origin f97608f178d1ffeca59860195ab7da295f7c8e5f
 git -C /tmp/hermes-native checkout FETCH_HEAD
-uv sync --project /tmp/hermes-native --frozen --no-dev --extra messaging --extra ddgs --python 3.14.7
+uv sync --project /tmp/hermes-native --frozen --no-dev --extra messaging --python 3.13
+uv pip install --python /tmp/hermes-native/.venv/bin/python --require-hashes --no-deps -r infra/ddgs-requirements.txt
 /tmp/hermes-native/.venv/bin/python ops/verify_assistant_native.py /tmp/hermes-native
 ```
 
@@ -35,9 +36,9 @@ uv sync --project /tmp/hermes-native --frozen --no-dev --extra messaging --extra
 
 ## 链路与边界
 
-`Open WebUI v0.6.36 → Hermes 原生 Chat Completions gateway → LiteLLM glm-5.3 / 搜索网页 / Core HTTP / 个人知识`
+`Open WebUI（平台当前 v0.11.4）→ Hermes 原生 Chat Completions gateway → LiteLLM glm-5.3 / 搜索网页 / Core HTTP / 个人知识`
 
-- Hermes 使用固定 `7fa45eb349a1a6f1eebc010b3fef0a9d996f386a`，独立 Python 3.14.7。镜像安装其原有锁中的 `messaging` 与 `ddgs` extras，无上游补丁。入口长期运行 `hermes gateway run`，每轮原生 Agent 循环，不执行逐消息 CLI。
+- Hermes 使用官方 **v2026.9.24 / v0.21.5**，固定 `f97608f178d1ffeca59860195ab7da295f7c8e5f`，独立 Python 3.13.16。镜像安装其原有锁中的 `messaging` extra 与 `infra/ddgs-requirements.txt` 中带 hash 的 DDGS 可选依赖，无上游补丁。入口长期运行 `hermes gateway run`，每轮原生 Agent 循环，不执行逐消息 CLI。
 - [配置](integrations/hermes/config.yaml) 的 API 并发为 1，工具为 `web_search`、`web_extract`、`memory`、`youwei_platform`、`youwei_knowledge`。关闭 Tool Search 延迟装配、后台 review；启动时校验实际工具集合，失败即退出；容器启用 init 回收子进程，禁用运行时 lazy installs。插件执行中间件再次限制工具名。无终端、通用文件、代码执行、浏览器、调度或自动技能安装工具。
 - 搜索为固定版 DDGS 9.16.0。该版本配置示例提及的 `native` 提取器实际未注册；本项目通过插件注册 `youwei-public-page`，直接读取公共 HTML/text，复用上游连接时 DNS/IP 校验的 SSRF 客户端（包含重定向检查）。不使用付费源或匿名第三方提取代理。最多 5 URL、每页 2 MB / 30s 读取检查、正文 15000 字；PDF、动态页面不声称已完整读取。外层 Hermes 提取超时仍生效。查询时间随正文返回，发布日期须从材料本身核实。
 - Core key 和专用 LiteLLM key 仅供助手服务使用；不挂数据库凭证、供应商 key 或 Docker socket。模型参数不接受 tenant 或任意 HTTP URL。当前单所有者，同一 profile 供跨聊天复用；不支持多用户共享个人记忆。
@@ -85,3 +86,7 @@ python /opt/youwei-assistant/backup.py verify /tmp/hermes-data.tar.gz --destinat
 ## 迁移记录
 
 2026-10-04 从 youwei-trading-agent 的 S12e 未提交实现迁入；插件及备份格式不变，上游未升级。助手源码、Dockerfile、原生验证及工具测试归本仓库，平台保留日线 API、数据库测试和 WebUI 配置/跨服务验收。无生产切换；实际验证记录见 [VERIFICATION.md](VERIFICATION.md)。
+
+2026-10-04：按用户选择将个人助手对齐官方 Release；该 Release 的 Python 上界为 `<3.14`，个人助手独立环境因此采用 3.13。平台 Core 与研究 Hermes 的版本由平台分别维护，本次不变。镜像标签 `io.youwei.hermes.revision` / `io.youwei.hermes.release` 及 `/opt/youwei-assistant/upstreams.lock.json` 记录来源。
+
+该官方 Release 自带 DDGS provider，但没有后来增加的 `ddgs` extra；为保持现有免 key 搜索，构建时单独安装带 SHA256 的四项固定依赖（DDGS 9.16.0 / primp 2.0.0 / lxml 6.1.2 / click 8.4.2），版本与前一已验证镜像一致，click 与 Release 锁一致。上游 pyproject/uv.lock 不修改，运行时仍禁止 lazy installs。

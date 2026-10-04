@@ -1,6 +1,6 @@
 """Offline integration against the pinned, separately installed Hermes checkout.
 
-Run with that checkout's Python 3.14. Starts a real native gateway and a mock
+Run with that checkout's Python 3.13. Starts a real native gateway and a mock
 OpenAI endpoint; never loads production keys or calls a paid model.
 """
 import argparse
@@ -34,7 +34,7 @@ from assistant_mock_model import MockModel
 
 def verify(checkout):
     from ruamel.yaml import YAML
-    assert subprocess.check_output(['git', '-C', str(checkout), 'rev-parse', 'HEAD'], text=True).strip() == '7fa45eb349a1a6f1eebc010b3fef0a9d996f386a'
+    assert subprocess.check_output(['git', '-C', str(checkout), 'rev-parse', 'HEAD'], text=True).strip() == json.loads((ROOT/'upstreams.lock.json').read_text())['hermes']['revision']
     model = ThreadingHTTPServer(('127.0.0.1', 0), MockModel)
     threading.Thread(target=model.serve_forever, daemon=True).start()
     with tempfile.TemporaryDirectory(prefix='youwei-native-') as tmp:

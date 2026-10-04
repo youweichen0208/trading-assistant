@@ -26,3 +26,14 @@
 首次 GitHub CI 在安装解释器时失败：固定 uv 的内置下载清单找不到 3.14.7。CI 改用现有 Dockerfile 同一固定 Python 基础镜像运行测试；Docker 构建单独作业。未更换上游、Python 或 uv 版本。
 
 修正后的 [GitHub CI](https://github.com/youweichen0208/trading-assistant/actions/runs/37143835375)（源码 `5279deaa3f40b4f07a0036d2fc63eb08247b1d97`）通过：独立依赖安装、12 项测试、固定 Hermes 原生验收及 Linux amd64 镜像构建。CI 构建未推送 registry，不等于目标机验收。后续提交仅同步文档中的平台 S12g 记录编号及此验收证据。
+
+## 官方 Release 对齐：v2026.9.24（2026-10-04）
+
+用户选择官方 v0.21.5 并明确同意个人助手切换至独立 Python 3.13；Core 与研究运行时不变。上游 tag 解引用到 `f97608f178d1ffeca59860195ab7da295f7c8e5f`，上游源码、pyproject.toml、uv.lock 均无修改（git diff --exit-code 通过）。
+
+- `uv sync --frozen --group dev --python 3.13`、`uv run --frozen pytest -q`：12 passed；本地解释器 3.13.14，目标镜像固定 Python 3.13.16。
+- 上游 `uv sync --frozen --no-dev --extra messaging --python 3.13`，之后 `uv pip install --require-hashes --no-deps -r infra/ddgs-requirements.txt`：通过；`uv pip check` 85 packages compatible。
+- `/tmp/youwei-hermes-release-20260924/.venv/bin/python ops/verify_assistant_native.py /tmp/youwei-hermes-release-20260924`：PASS，发现、鉴权、并发拒绝、断流恢复、错误路径、五工具循环、完整历史/SSE、memory、知识修订/删除、跨聊天读取、备份恢复及重启。mock 模型，无生产凭证及付费调用。
+- 首次尝试原有 `--extra ddgs` 被官方 Release 拒绝（未定义该 extra）。改为单独固定该可选 provider 的依赖；四个版本来自前一已验证 Hermes 锁，click 版本与此 Release 完全相同。没有修改上游依赖锁或源码。
+
+本段记录提交前验证；目标 amd64 镜像、WebUI v0.11.4 组合、旧数据副本及生产切换由平台后续验收，最终部署证据保存在平台 `docs/ops/hermes-release-20260924-rollout.md`。旧段中的“未发布/未部署”是当时历史状态。

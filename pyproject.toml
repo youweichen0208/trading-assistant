@@ -2,7 +2,7 @@
 name = "trading-assistant"
 version = "0.1.0"
 description = "Personal Hermes gateway and restricted platform tools"
-requires-python = ">=3.14,<3.15"
+requires-python = ">=3.13,<3.14"
 dependencies = ["httpx==0.28.1"]
 
 [dependency-groups]
