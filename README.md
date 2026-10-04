@@ -8,7 +8,7 @@
 | trading-assistant | gateway、平台 HTTP 工具、memory/知识、助手镜像和原生测试 |
 | [youwei-trading-agent](https://github.com/youweichen0208/youwei-trading-agent) | Core/Controller/Runner、研究实验 Hermes、正式评估、跨服务兼容与部署备份调度 |
 
-本仓库默认协作分支为 `develop`，变更通过 PR 合入；原 `main` 保留历史。开发、测试和构建不需要平台源码或兄弟目录。Core 仅通过 HTTP 访问。
+本仓库默认协作分支为 `develop`，变更通过 PR 合入；删除原 `main` 分支，其提交历史由 `develop` 保留。开发、测试和构建不需要平台源码或兄弟目录。Core 仅通过 HTTP 访问。
 
 ## 独立开发与验证
 
