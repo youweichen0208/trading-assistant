@@ -40,7 +40,7 @@ jobs:
       - name: Build fixed source
         env:
           REVISION: ${{ github.sha }}
-        run: docker build --label org.opencontainers.image.revision="$REVISION" -f infra/images/hermes-assistant.Dockerfile -t candidate .
+        run: docker build --label org.opencontainers.image.revision="$REVISION" --label org.opencontainers.image.source=https://github.com/youweichen0208/trading-assistant -f infra/images/hermes-assistant.Dockerfile -t candidate .
       - name: Verify native tools offline
         run: |
           docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,size=256m -v "$PWD:/verification:ro" --entrypoint python candidate /verification/ops/verify_assistant_native.py /opt/hermes
@@ -54,5 +54,5 @@ jobs:
         env:
           REVISION: ${{ github.sha }}
         run: |
-          docker tag candidate ghcr.io/youweichen0208/trading-assistant:$REVISION
-          docker push ghcr.io/youweichen0208/trading-assistant:$REVISION
+          docker tag candidate ghcr.io/youweichen0208/trading-assistant-candidates:$REVISION
+          docker push ghcr.io/youweichen0208/trading-assistant-candidates:$REVISION
