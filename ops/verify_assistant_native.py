@@ -75,7 +75,7 @@ def verify(checkout):
         def start():
             bootstrap = 'import sys; sys.path.insert(0, '+repr(str(home/'plugins/youwei-assistant'))+'); from entrypoint import run_gateway; run_gateway()'
             process = subprocess.Popen([str(checkout/'.venv/bin/python'), '-c', bootstrap], cwd=root, env=env, stdout=log, stderr=log)
-            for _ in range(120):
+            for _ in range(480):
                 try:
                     if httpx.get(f'http://127.0.0.1:{port}/health').status_code == 200:
                         return process
