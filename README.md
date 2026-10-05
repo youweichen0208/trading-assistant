@@ -39,7 +39,7 @@ uv --no-config pip install --python /tmp/hermes-native/.venv/bin/python --requir
 `Open WebUI（平台当前 v0.11.4）→ Hermes 原生 Chat Completions gateway → LiteLLM glm-5.3 / 搜索网页 / Core HTTP / 个人知识`
 
 - Hermes 使用官方 **v2026.9.24 / v0.21.5**，固定 `f97608f178d1ffeca59860195ab7da295f7c8e5f`，独立 Python 3.13.16。镜像安装其原有锁中的 `messaging` / `mcp` extras 与 `infra/ddgs-requirements.txt` 中带 hash 的 DDGS 可选依赖，无上游补丁。入口长期运行 `hermes gateway run`，每轮原生 Agent 循环，不执行逐消息 CLI。
-- [配置](integrations/hermes/config.yaml) 的 API 并发为 1，基础工具为 `web_search`、`web_extract`、`memory`、`youwei_platform`、`youwei_knowledge`，另加十九项 EODHD MCP 查询工具（候选，账户验收阻断，未部署）。关闭 Tool Search 延迟装配、后台 review；启动时要求基础工具完整且全部工具处于允许列表，EODHD 离线仍允许基础助手启动，越界即退出。容器启用 init 回收子进程，禁用运行时 lazy installs。插件执行中间件再次限制工具名。无终端、通用文件、代码执行、浏览器、调度或自动技能安装工具。
+- [配置](integrations/hermes/config.yaml) 的 API 并发为 1，基础工具为 `web_search`、`web_extract`、`memory`、`youwei_platform`、`youwei_knowledge`，另加九项 EODHD MCP 查询工具（原有七项 + 两项 Marketplace 指数查询）。关闭 Tool Search 延迟装配、后台 review；启动时要求基础工具完整且全部工具处于允许列表，EODHD 离线仍允许基础助手启动，越界即退出。容器启用 init 回收子进程，禁用运行时 lazy installs。插件执行中间件再次限制工具名。无终端、通用文件、代码执行、浏览器、调度或自动技能安装工具。
 - 搜索为固定版 DDGS 9.16.0。该版本配置示例提及的 `native` 提取器实际未注册；本项目通过插件注册 `youwei-public-page`，直接读取公共 HTML/text，复用上游连接时 DNS/IP 校验的 SSRF 客户端（包含重定向检查）。不使用付费源或匿名第三方提取代理。最多 5 URL、每页 2 MB / 30s 读取检查、正文 15000 字；PDF、动态页面不声称已完整读取。外层 Hermes 提取超时仍生效。查询时间随正文返回，发布日期须从材料本身核实。
 - Core key 和专用 LiteLLM key 仅供助手服务使用；额外持有 EODHD 查询 key，不挂数据库凭证或 Docker socket。模型参数不接受 tenant 或任意 HTTP URL。当前单所有者，同一 profile 供跨聊天复用；不支持多用户共享个人记忆。
 - 原生流式对话依赖请求消息历史。前端停止/断线不能被描述为 Core 任务已取消；普通聊天不保证重启后自动续跑。Core 已受理的任务仍由 Worker 持久执行，显式取消走任务接口。
@@ -49,13 +49,15 @@ uv --no-config pip install --python /tmp/hermes-native/.venv/bin/python --requir
 
 ### EODHD 个人查询
 
-个人查询通过 Hermes 原生 HTTP MCP 客户端直接连接 `https://mcp.eodhd.com/v1/mcp`。服务名 `eodhd`，仅开放 [policy.py](integrations/hermes/policy.py) 的十九项查询：证券解析/搜索、日线/盘中历史、普通/扩展报价、历史分红/拆股、新闻/情绪/词频、技术指标/筛选、商品历史、四项美国国债利率、短时 WebSocket 采集；模型工具名为 `mcp__eodhd__<name>`。关闭 resources/prompts 自动工具，不自动接纳新增工具。
+个人查询通过 Hermes 原生 HTTP MCP 客户端连接 `https://mcp.eodhd.com/v1/mcp`。只开放 [policy.py](integrations/hermes/policy.py) 的九项：`resolve_ticker`、`get_stocks_from_search`、`get_historical_stock_prices`、`get_live_price_data`、`get_fundamentals_data`、`get_company_news`、`get_upcoming_earnings`、`mp_indices_list`、`mp_index_components`。模型工具名为 `mcp__eodhd__<name>`。关闭 resources/prompts 自动工具，不自动接纳新增工具。
 
-`EODHD_API_KEY` 仅注入助手运行环境，配置以变量引用 Authorization Bearer header；不放入 URL、镜像或模型参数。未设置 key 时禁用 MCP，便于隔离恢复。拒绝工具参数覆盖凭证；返回内容与 Python 日志脱敏。连接超时 10s，查询超时 30s，沿用上游连接恢复及退避。
+本次保留原有七项并接入已购买的 Indices Historical Constituents Data API。先用 `mp_indices_list` 查指数代码，再以 `mp_index_components(symbol="GSPC.INDX")` 查询单个指数；只接受 JSON 和单个 `.INDX` 代码，不自动批量下载。保留当前 Components 与 HistoricalTickerComponents 的区别；历史调入/调出日期不等于当时系统已知时间，也不能据此推断历史权重。此 Marketplace 产品独立计量，账户基础 subscriptionType 不能单独判断其权限。
 
-公司名称先解析，美股默认 US；日线、公司行为、情绪、词频、技术指标必须给日期区间，盘中历史给明确 from_timestamp/to_timestamp，国债给 year；商品接口无日期过滤参数。新闻、词频和筛选默认 10 条、最多 50 条。WebSocket 默认 5 秒、最多 10 秒/100 条/1 MiB，连接超时最多 5 秒；上限在调用前拒绝，保留上游时间/截断元数据。MCP 连接超时仍为 10 秒、调用超时 30 秒。移除基本面和财报日历。回答区分数据日期、币种、来源和实际时效，不声称所有报价实时。个人查询不自动进入 Core PIT 快照、Ledger 或 ResearchRelease。
+`EODHD_API_KEY` 只由助手环境注入 Authorization Bearer header；不放入 URL、镜像或模型参数。未设置 key 时禁用 MCP，以便隔离恢复。拒绝模型参数覆盖凭证，返回与日志脱敏。日线要求明确日期范围；新闻默认 10 条、最多 50 条；MCP 连接超时 10 秒、查询超时 30 秒。个人查询不自动进入 Core PIT 快照、Ledger 或 ResearchRelease。
 
-原生验收包含 mock MCP 与 mock 模型。真实只读验证：通过私密环境注入 key 后运行 `python ops/verify_eodhd_live.py`，每项能力一次有界请求，解包并检查证券、关键字段和日期；输出状态、查询参数、行数及 schema hash，不输出原始响应或密钥。远端 schema 快照在 ops/eodhd-schemas.json（2026-10-04 UTC），原生 mock 使用相同 schema。套餐拒绝会返回非零，不代表接线失败或允许自动采购。2026-10-04 VM 实测搜索、解析、历史、报价、新闻可用；基本面与财报日历被当前套餐拒绝。
+默认允许列表不保证账户权限。原有基本面/财报日历仍可能被套餐拒绝；此前十九项 Extended 实验见 VERIFICATION.md，盘中/技术指标/筛选及 WebSocket 未通过账户验收，不在当前允许列表。其防护及历史探测脚本保留用于复现。
+
+原生 mock 验收覆盖九项发现、执行和参数边界。真实镜像验收通过私密环境注入 key，运行 `python ops/verify_eodhd_runtime.py`，核对完整工具发现、AAPL 报价、指数列表和 GSPC 当前/历史成分的字段与日期。`ops/verify_eodhd_live.py` 默认仍是历史 Extended 十九项探测器，不是当前九项发布清单。远端 schema 快照在 `ops/eodhd-schemas.json`；原生 mock 复用其中对应 schema。
 
 ### Core 接口
 

@@ -108,7 +108,11 @@ def verify(checkout):
                 failed_submit = call('youwei_platform', {'action':'submit','arguments':{'ticker':'AAPL','horizon_td':20}})
                 assert isinstance(failed_submit, dict) and 'transport failure' in failed_submit['error'], failed_submit
                 for name in sorted(MCP_TOOLS):
-                    args = probe_queries(date(2026, 10, 4))[name.removeprefix('mcp__eodhd__')]
+                    cases = probe_queries(date(2026, 10, 4))
+                    cases.update(mp_indices_list={}, mp_index_components={'symbol': 'GSPC.INDX'},
+                                 get_fundamentals_data={'ticker': 'AAPL.US'},
+                                 get_upcoming_earnings={'symbols': 'AAPL.US', 'start_date': '2026-10-01', 'end_date': '2026-10-08'})
+                    args = cases[name.removeprefix('mcp__eodhd__')]
                     if name == 'mcp__eodhd__get_company_news':
                         args.pop('limit')
                     if name == 'mcp__eodhd__capture_realtime_ws':
@@ -123,15 +127,13 @@ def verify(checkout):
                 for ticker, expected in [('DENIED','403'),('LIMITED','429')]:
                     result = call('mcp__eodhd__get_live_price_data', {'ticker':ticker})
                     assert expected in json.dumps(result) and TOKEN not in json.dumps(result), result
-                for tool, args in [('stock_screener', {'limit': 51}),
-                                   ('capture_realtime_ws', {'duration_seconds': 11}),
-                                   ('get_intraday_historical_data', {})]:
+                for tool, args in [('mp_index_components', {'symbol': '../user'}),
+                                   ('mp_index_components', {'symbol': 'GSPC.INDX', 'api_token': 'override'}),
+                                   ('mp_indices_list', {'fmt': 'csv'}),
+                                   ('get_company_news', {'limit': 51})]:
                     count = len(MockMCP.calls)
                     assert 'error' in call('mcp__eodhd__' + tool, args)
                     assert len(MockMCP.calls) == count
-                capture = next(c for c in MockMCP.calls if c['name'] == 'capture_realtime_ws')
-                assert capture['arguments']['max_data_bytes'] == 1048576
-                assert capture['arguments']['duration_seconds'] == 5
                 news = next(c for c in MockMCP.calls if c['name'] == 'get_company_news')
                 assert news['arguments']['limit'] == 10
                 malformed = client.post('/v1/chat/completions', json={'messages':[]})
@@ -186,7 +188,7 @@ def verify(checkout):
                 assert call('youwei_knowledge', {'action':'search','arguments':{'query':'marker'}}) == []
                 log.flush(); log.seek(0)
                 assert TOKEN not in log.read()
-                print('PASS native auth/concurrency/stream/history/memory/knowledge/backup/restore/restart; MCP nineteen-tool loop/allowlist/credentials/redaction/403/429/timeout/offline startup')
+                print('PASS native auth/concurrency/stream/history/memory/knowledge/backup/restore/restart; MCP nine-tool loop/allowlist/credentials/redaction/403/429/timeout/offline startup')
         except Exception:
             log.flush(); log.seek(0); print(log.read()[-10000:]); raise
         finally:

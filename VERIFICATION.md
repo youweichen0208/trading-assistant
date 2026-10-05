@@ -62,3 +62,11 @@
 - VM 现有 Key 通过官方远端 `tools/list` 发现 93 项，19 项目标 schema 已存 `ops/eodhd-schemas.json`。`ops/verify_eodhd_live.py` 按实际业务结构、证券及日期校验：15 项有效；盘中历史/技术指标/筛选为 subscription_denied；BTC-USD crypto WebSocket 为 connection_failed。没有合法空结果、限流或参数错误。
 - 旧验收只看 MCP isError，会把技术指标/筛选嵌套 JSON 的 403 当成成功；本次增加解包与回归测试并重新运行所有查询。两项国债接口忽略 limit=1，分别返回指定年份内 1330/570 行，报告显式标记 limit_ignored。
 - 全部真实调用只使用供应商查询，无付费模型。账户权限与实时采集未通过，按任务约束暂停生产切换，不删去失败工具。发布候选的源码、amd64 registry digest、跨服务结果由平台 `docs/ops/eodhd-extended-20261005.md` 记录；这不授予候选生产就绪状态。
+
+## 2026-10-05 Marketplace 指数接入
+
+- 当前发布恢复生产原有七项 MCP，并增加 `mp_indices_list` / `mp_index_components`，共九项 MCP + 五项基础工具。此前 Extended 候选保持历史记录，未被偷偷启用。
+- TDD：允许列表先失败 1 项、Marketplace 参数边界先失败 6 项、结构验证先失败 1 项；实现后 `uv run --frozen pytest -q`：60 passed；`git diff --check` 通过。
+- 官方固定 checkout 原生验收 PASS：九项工具循环、凭证覆盖拒绝、输出脱敏、403/429/超时/离线、流式/追问/历史/记忆/知识/备份恢复/重启。
+- 本地独立 Docker 镜像构建及镜像内原生验收 PASS，Hermes/Python/依赖锁无改动。amd64/真实账户/跨服务/部署结果由平台最终发布记录维护。
+- 官方 tools/list schema 新增 Marketplace 两项，参数为列表无必填及成分 `symbol`；限制单指数 JSON，保留历史成分原始日期，不生成 PIT 或历史权重结论。

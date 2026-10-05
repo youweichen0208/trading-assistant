@@ -1,4 +1,4 @@
-"""Run inside the candidate/running image: native discovery and one read-only quote, no LLM."""
+"""Run inside the candidate/running image: native discovery, quote and purchased index data, no LLM."""
 import json
 import os
 from pathlib import Path
@@ -8,6 +8,7 @@ sys.path.insert(0, '/opt/youwei-assistant')
 from policy import BASE_TOOLS, MCP_TOOLS
 from eodhd import install_secret_redaction
 from bootstrap import install_profile, discovered_tools
+from verify_eodhd_live import inspect_result
 
 
 def verify():
@@ -30,7 +31,16 @@ def verify():
         assert isinstance(quote, dict) and quote.get('code') == 'AAPL.US', 'unexpected quote symbol'
         assert isinstance(quote.get('close'), (int, float)) and quote.get('timestamp'), 'quote fields missing'
         assert os.environ['EODHD_API_KEY'] not in result, 'credential leaked'
-        print(json.dumps({'result': 'PASS', 'tool_names': sorted(names), 'native_quote': True,
+        marketplace = {}
+        for tool, args in [('mp_indices_list', {}), ('mp_index_components', {'symbol': 'GSPC.INDX'})]:
+            raw = handle_function_call('mcp__eodhd__' + tool, args, enabled_tools=sorted(names))
+            assert os.environ['EODHD_API_KEY'] not in raw, 'credential leaked'
+            payload = json.loads(raw)
+            assert 'error' not in payload, 'native Marketplace call failed'
+            check = inspect_result(tool, args, {'result': {'structuredContent': payload}})
+            assert check['status'] == 'success', 'Marketplace structure validation failed: ' + tool
+            marketplace[tool] = check
+        print(json.dumps({'result': 'PASS', 'marketplace': marketplace, 'tool_names': sorted(names), 'native_quote': True,
                           'paid_model_calls': False}))
 
 

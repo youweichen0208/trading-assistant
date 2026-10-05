@@ -35,7 +35,26 @@ def inspect_result(name, args, result):
     try:
         rows = value
         checks = []
-        if name == 'resolve_ticker':
+        if name == 'mp_indices_list':
+            assert isinstance(value, list) and value
+            assert all(isinstance(row, dict) and row.get('ID', '').endswith('.INDX') and row.get('Name') for row in value)
+            assert any(row['ID'] == 'GSPC.INDX' for row in value)
+            checks.append('index_ids_and_names')
+        elif name == 'mp_index_components':
+            assert value['General']['Code'] == args['symbol'].removesuffix('.INDX')
+            components = value['Components']
+            history = value['HistoricalTickerComponents']
+            assert isinstance(components, dict) and components
+            assert isinstance(history, dict) and history
+            assert all(row.get('Code') for row in components.values())
+            for row in history.values():
+                assert row.get('Code') and 'StartDate' in row and 'EndDate' in row
+                if row['StartDate']:
+                    date.fromisoformat(row['StartDate'])
+                if row['EndDate']:
+                    date.fromisoformat(row['EndDate'])
+            checks.append('index_symbol_current_and_historical_membership')
+        elif name == 'resolve_ticker':
             assert value['resolved'] == 'AAPL.US' and value['exchange'] == 'US'
             checks.append('resolved_symbol_exchange')
         elif name == 'get_stocks_from_search':

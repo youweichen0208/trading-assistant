@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import re
 import traceback
 from datetime import date, datetime, timezone
 from urllib.parse import quote, quote_plus
@@ -50,6 +51,16 @@ def execute_query(name, args, next_call):
         return json.dumps({'error': 'EODHD credentials are server-managed; token overrides are not allowed'})
     args = dict(args)
     tool = name.removeprefix('mcp__eodhd__')
+    if tool in {'mp_indices_list', 'mp_index_components'}:
+        if args.get('fmt', 'json') != 'json':
+            return json.dumps({'error': 'Marketplace index queries require JSON format'})
+        if tool == 'mp_index_components':
+            symbol = args.get('symbol')
+            if not isinstance(symbol, str) or not re.fullmatch(r'[A-Z0-9][A-Z0-9_-]{0,63}\.INDX', symbol):
+                return json.dumps({'error': 'provide one index symbol from mp_indices_list, e.g. GSPC.INDX'})
+    if tool == 'get_fundamentals_data' and not args.get('sections'):
+        args['sections'] = ['General', 'Highlights', 'Valuation']
+        args['include_financials'] = False
     try:
         dated = {'get_historical_stock_prices', 'get_historical_dividends',
                  'get_historical_splits', 'get_technical_indicators',
