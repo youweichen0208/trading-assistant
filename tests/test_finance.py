@@ -74,3 +74,11 @@ def test_registered_handlers_validate_arguments():
     for tool in registered.values():
         assert tool['schema']['parameters']['additionalProperties'] is False
         assert json.loads(tool['handler']({'symbol':'../x','api_key':'secret'}))['error'] == 'invalid_financial_arguments'
+
+
+def test_date_validation_gives_safe_repair_guidance_without_running_worker():
+    tools = FinancialTools(command=[sys.executable, '-c', 'raise SystemExit(99)'])
+    result = json.loads(tools.call('price_history', ARGS | {'end': '2099-01-01'}))
+    assert result['error'] == 'invalid_financial_arguments'
+    assert 'exclusive' in result['hint'] and 'tomorrow UTC' in result['hint']
+    assert '2099' not in json.dumps(result)

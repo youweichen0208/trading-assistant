@@ -8,6 +8,7 @@ import subprocess
 import sys
 import threading
 import time
+from pydantic import ValidationError
 from trading_core import PriceQuery, FinancialQuery
 
 
@@ -35,6 +36,14 @@ class FinancialTools:
                 raise ValueError('operation')
             query = (FinancialQuery if operation == 'financials' else PriceQuery)(**arguments)
             request = json.dumps({'operation':operation, 'arguments':query.model_dump(mode='json')},sort_keys=True)
+        except ValidationError as exc:
+            errors = exc.errors(include_input=False, include_context=False, include_url=False)
+            if operation in {'price_history', 'indicators'} and all(
+                    tuple(item['loc']) in {(), ('start',), ('end',)} for item in errors):
+                return json.dumps({'error': 'invalid_financial_arguments', 'hint':
+                    'Use ISO dates: start inclusive, end exclusive, start < end, at most five years. '
+                    'End may be at most tomorrow UTC to include today. Current-day data may be incomplete or unavailable.'})
+            return error('invalid_financial_arguments')
         except (ValueError, TypeError):
             return error('invalid_financial_arguments')
         if not self.lock.acquire(blocking=False):
