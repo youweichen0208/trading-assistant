@@ -9,6 +9,7 @@ class MockModel(BaseHTTPRequestHandler):
     histories = []
     audits = []
     slow_started = threading.Event()
+    children_started = threading.Barrier(2)
 
     def log_message(self, *args):
         pass
@@ -32,16 +33,25 @@ class MockModel(BaseHTTPRequestHandler):
         query = messages[last_user]['content']
         if isinstance(query, list):
             query = '\n'.join(p.get('text', '') for p in query)
+        child_query = 'VERIFY_CHILD_' in query and not query.startswith('VERIFY:')
+        child_first = child_query and not any(m['role'] == 'tool' for m in messages[last_user + 1:])
+        if child_first:
+            self.children_started.wait(timeout=10)
         if query == 'SLOW':
             self.slow_started.set(); time.sleep(3)
-        if query.startswith('VERIFY:') and not any(m['role'] == 'tool' for m in messages[last_user + 1:]):
+        if child_first:
+            message = {'role':'assistant','content':None,'tool_calls':[{'id':'child-denied','type':'function','function':{'name':'youwei_platform','arguments':json.dumps({'action':'submit','arguments':{'ticker':'AAPL','horizon_td':20}})}}]}
+            finish='tool_calls'
+        elif query.startswith('VERIFY:') and not any(m['role'] == 'tool' for m in messages[last_user + 1:]):
             command = json.loads(query[7:])
             message = {'role': 'assistant', 'content': None, 'tool_calls': [{
                 'id': 'call-' + str(len(self.histories)), 'type': 'function',
                 'function': {'name': command['tool'], 'arguments': json.dumps(command['args'])}}]}
             finish = 'tool_calls'
         else:
-            content = messages[-1].get('content', '') if messages[-1]['role'] == 'tool' else 'Follow-up received'
+            content = messages[-1].get('content', '') if messages[-1]['role'] == 'tool' else ('Verified child evidence' if 'VERIFY_CHILD_' in query else 'Follow-up received')
+            if child_query:
+                content = 'Verified child evidence: ' + str(content)
             message = {'role': 'assistant', 'content': str(content)}; finish = 'stop'
         common = dict(id='mock', object='chat.completion', created=int(time.time()), model='glm-5.3')
         self.send_response(200)

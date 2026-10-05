@@ -123,6 +123,14 @@ def verify(checkout):
                     assert 'stock-data' in json.dumps(result), result
                 tool_sets = [set(a['tools']) for a in MockModel.audits if a['tools']]
                 assert tool_sets and all(names == BASE_TOOLS | MCP_TOOLS for names in tool_sets), tool_sets
+                delegation = call('delegate_task', {'tasks':[
+                    {'goal':'VERIFY_CHILD_ONE verify first event from public sources'},
+                    {'goal':'VERIFY_CHILD_TWO verify second event from public sources'}]})
+                assert 'Verified child evidence' in json.dumps(delegation), delegation
+                assert 'research_child_tool_or_budget_denied' in json.dumps(delegation), delegation
+                child_audits = [a for a in MockModel.audits if a['tools'] and set(a['tools']) != BASE_TOOLS | MCP_TOOLS]
+                assert len(child_audits) == 4, child_audits
+                assert all(set(a['tools']) <= {'web_search','web_extract'} for a in child_audits), child_audits
                 count = len(MockMCP.calls)
                 assert 'error' in call('mcp__eodhd__get_live_price_data', {'ticker':'AAPL.US','api_token':'override'})
                 assert len(MockMCP.calls) == count

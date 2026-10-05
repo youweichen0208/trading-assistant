@@ -6,7 +6,7 @@ model:
 agent:
   max_turns: 20
 platform_toolsets:
-  api_server: [web, memory, youwei-assistant, eodhd]
+  api_server: [web, memory, youwei-assistant, eodhd, delegation]
 mcp_servers:
   eodhd:
     url: https://mcp.eodhd.com/v1/mcp
@@ -42,3 +42,11 @@ platforms:
 tools:
   tool_search:
     enabled: "off"
+
+delegation:
+  max_concurrent_children: 2
+  max_spawn_depth: 1
+  max_iterations: 6
+  child_timeout_seconds: 60
+  inherit_mcp_toolsets: false
+  subagent_auto_approve: false

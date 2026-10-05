@@ -32,13 +32,13 @@ class FinancialTools:
         def error(code):
             return json.dumps({'error':code})
         try:
-            if operation not in {'price_history','indicators','financials'}:
+            if operation not in {'price_history','indicators','financials','analysis'}:
                 raise ValueError('operation')
             query = (FinancialQuery if operation == 'financials' else PriceQuery)(**arguments)
             request = json.dumps({'operation':operation, 'arguments':query.model_dump(mode='json')},sort_keys=True)
         except ValidationError as exc:
             errors = exc.errors(include_input=False, include_context=False, include_url=False)
-            if operation in {'price_history', 'indicators'} and all(
+            if operation in {'price_history', 'indicators', 'analysis'} and all(
                     tuple(item['loc']) in {(), ('start',), ('end',)} for item in errors):
                 return json.dumps({'error': 'invalid_financial_arguments', 'hint':
                     'Use ISO dates: start inclusive, end exclusive, start < end, at most five years. '
@@ -115,6 +115,7 @@ _tools = FinancialTools()
 
 def register_finance(ctx):
     for operation, model, description in (
+        ('analysis', PriceQuery, 'Preferred stock trend analysis: one Yahoo fetch returns requested-period daily prices, return/drawdown/volatility, and SMA20/50/200 + RSI with up to 400 calendar days of warmup. indicator_history describes the separate warmup window; do not use it as the requested return period. No need to call price_history or indicators again for the same analysis.'),
         ('price_history', PriceQuery, 'Default free US stock/ETF historical daily prices (Yahoo). One symbol, ISO start inclusive/end exclusive, at most five years. Raw vendor OHLC and adjusted close remain separate. Not live or formal PIT.'),
         ('indicators', PriceQuery, 'Default free indicators: fetch validated Yahoo adjusted closes internally, then SMA20/50/200, Wilder RSI14, interval return, annualized sample volatility, max drawdown. One symbol and explicit ISO dates; no price arrays. Missing samples carry reasons.'),
         ('financials', FinancialQuery, 'Default free SEC US-GAAP financials: revenue, net income, assets, liabilities, operating cash flow. Defaults to four explicit quarters; max eight quarters or five years. Cumulative values never substituted. Missing tags/quarters remain missing. Latest filings, not formal PIT.'),

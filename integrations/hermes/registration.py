@@ -16,6 +16,9 @@ def register(ctx):
     install_secret_redaction()
     from .finance import register_finance
     register_finance(ctx)
+    from .research import register_research, restrict_child_request
+    register_research(ctx)
+    ctx.register_middleware('llm_request', restrict_child_request)
     from .web import register_extract_provider
     register_extract_provider(ctx)
     ctx.register_middleware('tool_execution', tool_boundary)
