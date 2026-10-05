@@ -1,5 +1,7 @@
 # 独立迁移验证（2026-10-04）
 
+本文件保留各次验证的时间与结果，旧版本及当时未部署说明不代表当前状态。最新免费金融交付与生产证据见 [状态](docs/STATUS.md) 和平台 [金融上线记录](https://github.com/youweichen0208/youwei-trading-agent/blob/develop/docs/ops/trading-core-20261005.md)。
+
 本仓库迁自平台 S12e，保留原插件字节、配置、五工具允许列表、容器路径和备份格式。Hermes 无补丁，未升级上游。
 
 | 身份 | 值 |

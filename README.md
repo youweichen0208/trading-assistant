@@ -1,10 +1,13 @@
 # trading-assistant
 
+文档入口：[索引](docs/README.md) · [领域术语](CONTEXT.md) · [架构](docs/ARCHITECTURE.md) · [开发](docs/DEVELOPMENT.md) · [运维](docs/OPERATIONS.md) · [状态](docs/STATUS.md)。Agent 修改前阅读 [AGENTS.md](AGENTS.md)。
+
 个人 Hermes gateway 的独立业务仓库，使用官方固定源码及插件，不 fork Hermes。
 
 | 仓库 | 职责 |
 | --- | --- |
 | [youwei-webui](https://github.com/youweichen0208/youwei-webui) | 界面、登录、聊天历史和展示 |
+| [trading_core](https://github.com/youweichen0208/trading_core) | 独立金融 Python 包：免费日线、指标与 SEC 查询 |
 | trading-assistant | gateway、平台 HTTP 工具、memory/知识、助手镜像和原生测试 |
 | [youwei-trading-agent](https://github.com/youweichen0208/youwei-trading-agent) | Core/Controller/Runner、研究实验 Hermes、正式评估、跨服务兼容与部署备份调度 |
 
@@ -18,7 +21,7 @@ uv run --frozen pytest -q
 docker build -f infra/images/hermes-assistant.Dockerfile -t trading-assistant:verification .
 ```
 
-开发锁 `uv.lock` 只覆盖插件测试；运行镜像使用 `upstreams.lock.json` 记录的 Hermes 完整 SHA 和其原生 frozen 锁（messaging/mcp extras 与单独固定的 DDGS 可选依赖）。Python/uv 基础镜像 digest 固定在 Dockerfile；不把 Core 或研究环境依赖引入本仓库。
+开发锁 `uv.lock` 覆盖插件测试和固定金融 wheel；运行镜像使用 `upstreams.lock.json` 记录的 Hermes 完整 SHA 和其原生 frozen 锁（messaging/mcp extras 与单独固定的 DDGS 可选依赖）。Python/uv 基础镜像 digest 固定在 Dockerfile；不把 Core 或研究环境依赖引入本仓库。
 
 原生验收需要单独的固定 Hermes checkout，其安装方式：
 
@@ -29,6 +32,7 @@ git -C /tmp/hermes-native fetch --depth 1 origin f97608f178d1ffeca59860195ab7da2
 git -C /tmp/hermes-native checkout FETCH_HEAD
 uv sync --project /tmp/hermes-native --frozen --no-dev --extra messaging --extra mcp --python 3.13
 uv --no-config pip install --python /tmp/hermes-native/.venv/bin/python --require-hashes --no-deps -r infra/ddgs-requirements.txt
+/tmp/hermes-native/.venv/bin/python infra/install_finance.py .
 /tmp/hermes-native/.venv/bin/python ops/verify_assistant_native.py /tmp/hermes-native
 ```
 
@@ -39,7 +43,7 @@ uv --no-config pip install --python /tmp/hermes-native/.venv/bin/python --requir
 `Open WebUI（平台当前 v0.11.4）→ Hermes 原生 Chat Completions gateway → LiteLLM glm-5.3 / 搜索网页 / Core HTTP / 个人知识`
 
 - Hermes 使用官方 **v2026.9.24 / v0.21.5**，固定 `f97608f178d1ffeca59860195ab7da295f7c8e5f`，独立 Python 3.13.16。镜像安装其原有锁中的 `messaging` / `mcp` extras 与 `infra/ddgs-requirements.txt` 中带 hash 的 DDGS 可选依赖，无上游补丁。入口长期运行 `hermes gateway run`，每轮原生 Agent 循环，不执行逐消息 CLI。
-- [配置](integrations/hermes/config.yaml) 的 API 并发为 1，基础工具为 `web_search`、`web_extract`、`memory`、`youwei_platform`、`youwei_knowledge`，另加九项 EODHD MCP 查询工具（原有七项 + 两项 Marketplace 指数查询）。关闭 Tool Search 延迟装配、后台 review；启动时要求基础工具完整且全部工具处于允许列表，EODHD 离线仍允许基础助手启动，越界即退出。容器启用 init 回收子进程，禁用运行时 lazy installs。插件执行中间件再次限制工具名。无终端、通用文件、代码执行、浏览器、调度或自动技能安装工具。
+- [配置](integrations/hermes/config.yaml) 的 API 并发为 1，基础工具为 `web_search`、`web_extract`、`memory`、`youwei_platform`、`youwei_knowledge`、`trading_price_history`、`trading_indicators`、`trading_financials`，另加九项 EODHD MCP 查询工具（原有七项 + 两项 Marketplace 指数查询）。关闭 Tool Search 延迟装配、后台 review；启动时要求基础工具完整且全部工具处于允许列表，EODHD 离线仍允许基础助手启动，越界即退出。容器启用 init 回收子进程，禁用运行时 lazy installs。插件执行中间件再次限制工具名。无终端、通用文件、代码执行、浏览器、调度或自动技能安装工具。
 - 搜索为固定版 DDGS 9.16.0。该版本配置示例提及的 `native` 提取器实际未注册；本项目通过插件注册 `youwei-public-page`，直接读取公共 HTML/text，复用上游连接时 DNS/IP 校验的 SSRF 客户端（包含重定向检查）。不使用付费源或匿名第三方提取代理。最多 5 URL、每页 2 MB / 30s 读取检查、正文 15000 字；PDF、动态页面不声称已完整读取。外层 Hermes 提取超时仍生效。查询时间随正文返回，发布日期须从材料本身核实。
 - Core key 和专用 LiteLLM key 仅供助手服务使用；额外持有 EODHD 查询 key，不挂数据库凭证或 Docker socket。模型参数不接受 tenant 或任意 HTTP URL。当前单所有者，同一 profile 供跨聊天复用；不支持多用户共享个人记忆。
 - 原生流式对话依赖请求消息历史。前端停止/断线不能被描述为 Core 任务已取消；普通聊天不保证重启后自动续跑。Core 已受理的任务仍由 Worker 持久执行，显式取消走任务接口。
@@ -114,11 +118,13 @@ python /opt/youwei-assistant/backup.py verify /tmp/hermes-data.tar.gz --destinat
 
 同一个助手镜像可另外启动 `python /opt/youwei-assistant/workbench.py`，默认监听 8643，使用 `API_SERVER_KEY` 鉴权。仅暴露 `GET /skills` 与 `GET /skills/{name}`，复用固定 Hermes 的目录/正文读取函数，明确传入 `preprocess=False`，不会执行技能内联 shell 或调用模型。
 
-部署时只读挂载现有 `hermes_profile`，不传模型、Core 或 EODHD 密钥，不暴露宿主端口。WebUI 负责登录与指定所有者鉴权。平台提供可选 `infra/compose/chat-workbench.json` 接线；本次源码和镜像验证不代表 VM 已部署。
+部署时只读挂载现有 `hermes_profile`，不传模型、Core 或 EODHD 密钥，不暴露宿主端口。WebUI 负责登录与指定所有者鉴权。平台提供可选 `infra/compose/chat-workbench.json` 接线；部署结果见 [状态](docs/STATUS.md) 指向的平台记录；源码或新镜像通过验证不自动改变已部署版本。
 
 此接口绕开固定 Release 原生 `/v1/skills` 的 `include_editorial` 参数不匹配问题，未修改上游源码。技能编辑/自我改进审批与消息平台配置不在此只读服务中开放。
 
 2026-10-05 扩展候选账户验收：15 项有效，盘中历史/技术指标/筛选返回套餐 403，crypto WebSocket 连接断开。不得将发现十九工具等同账户可用；生产切换暂停。国债 bill/long-term 忽略 limit，但返回均在所选年份内。详见平台 S12n 记录。
+
+## 免费金融工具
 
 免费金融工具由独立私有 `trading_core` wheel 提供：`trading_price_history`、`trading_indicators`、`trading_financials`。普通日线、指标和财报默认走这些工具；EODHD 指数和既有工具保留。输入只允许单证券、明确日期或有限期间；输出非正式 PIT。总时限40秒、并发1、最多512KiB返回、16条120秒内存缓存；停止使用 Hermes 当前线程中断信号回收固定金融子进程。子进程不继承 Core、LLM 或 EODHD 凭证。
 
