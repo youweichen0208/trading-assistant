@@ -20,5 +20,13 @@
       "version": "9.16.0",
       "reason": "Official release provides DDGS integration without a dependency extra; retain existing keyless search without patching upstream"
     }
+  },
+  "trading_core": {
+    "repository": "https://github.com/youweichen0208/trading_core",
+    "revision": "b915800aef7682010db36fb911fe5669ce45c37d",
+    "wheel": "vendor/trading_core-0.1.0-py3-none-any.whl",
+    "wheel_sha256": "64734560ea7446d50a7ece645e42b10c4a351e2df042f2007e552bed5cfeddbd",
+    "uv_lock_sha256": "7b9de652de5f74c5141a44ace33079969d5a975a58b3c827c6a136f973f73ef2",
+    "requirements": "infra/finance-requirements.txt"
   }
 }

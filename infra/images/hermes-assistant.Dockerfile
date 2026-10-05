@@ -17,6 +17,11 @@ WORKDIR /opt/hermes
 COPY infra/ddgs-requirements.txt /opt/ddgs-requirements.txt
 RUN uv sync --frozen --no-dev --extra messaging --extra mcp --python /usr/local/bin/python && \
     uv --no-config pip install --python .venv/bin/python --require-hashes --no-deps -r /opt/ddgs-requirements.txt && rm -rf .git
+COPY vendor /opt/finance/vendor
+COPY upstreams.lock.json /opt/finance/upstreams.lock.json
+COPY infra/finance-requirements.txt /opt/finance/infra/finance-requirements.txt
+COPY infra/install_finance.py /opt/finance/infra/install_finance.py
+RUN .venv/bin/python /opt/finance/infra/install_finance.py /opt/finance
 FROM ${PYTHON_IMAGE}
 ARG HERMES_REVISION
 LABEL io.youwei.hermes.revision="${HERMES_REVISION}" io.youwei.hermes.release="v2026.9.24"

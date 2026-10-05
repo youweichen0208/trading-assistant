@@ -119,3 +119,11 @@ python /opt/youwei-assistant/backup.py verify /tmp/hermes-data.tar.gz --destinat
 此接口绕开固定 Release 原生 `/v1/skills` 的 `include_editorial` 参数不匹配问题，未修改上游源码。技能编辑/自我改进审批与消息平台配置不在此只读服务中开放。
 
 2026-10-05 扩展候选账户验收：15 项有效，盘中历史/技术指标/筛选返回套餐 403，crypto WebSocket 连接断开。不得将发现十九工具等同账户可用；生产切换暂停。国债 bill/long-term 忽略 limit，但返回均在所选年份内。详见平台 S12n 记录。
+
+免费金融工具由独立私有 `trading_core` wheel 提供：`trading_price_history`、`trading_indicators`、`trading_financials`。普通日线、指标和财报默认走这些工具；EODHD 指数和既有工具保留。输入只允许单证券、明确日期或有限期间；输出非正式 PIT。总时限40秒、并发1、最多512KiB返回、16条120秒内存缓存；停止使用 Hermes 当前线程中断信号回收固定金融子进程。子进程不继承 Core、LLM 或 EODHD 凭证。
+
+SEC 由服务端设置 `TRADING_SEC_USER_AGENT="应用名称 实际联系邮箱"`，不得将邮箱或其他凭证写入 Git。未配置时明确报错。免费源不可用不自动切换供应商。
+
+`upstreams.lock.json` 登记金融源码 SHA、独立锁 hash 和 vendored wheel hash；`infra/finance-requirements.txt` 固定补充依赖及下载 hash。wheel 从固定 `git archive` 构建并重复比对 hash，不要求镜像构建访问私有源码。更新金融包时同步 wheel、登记及两个锁。`infra/install_finance.py` 在安装前检查所有已有包兼容性、安装后检查已有版本完全不变和完整依赖一致性；冲突阻断构建。
+
+候选镜像离线原生金融验收：隔离 HOME、挂载本仓库只读，执行 `ops/verify_finance_runtime.py`；`--live` 查询 AAPL/MSFT/SPY 行情及 AAPL/MSFT SEC，任何失败返回非零。脚本与 fixture 不进入生产镜像。真实查询与 mock 模型/WebUI 验收分别报告。

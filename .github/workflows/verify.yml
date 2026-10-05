@@ -20,6 +20,7 @@ jobs:
           git -C /tmp/hermes checkout FETCH_HEAD
           uv sync --project /tmp/hermes --frozen --no-dev --extra messaging --extra mcp --python 3.13.16
           uv --no-config pip install --python /tmp/hermes/.venv/bin/python --require-hashes --no-deps -r infra/ddgs-requirements.txt
+      - run: /tmp/hermes/.venv/bin/python infra/install_finance.py .
       - run: /tmp/hermes/.venv/bin/python ops/verify_assistant_native.py /tmp/hermes
   image:
     runs-on: ubuntu-latest

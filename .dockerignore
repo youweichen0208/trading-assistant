@@ -6,4 +6,8 @@ integrations/hermes/__pycache__/
 integrations/hermes/*.pyc
 !infra/
 !infra/ddgs-requirements.txt
+!infra/finance-requirements.txt
+!infra/install_finance.py
+!vendor/
+!vendor/*.whl
 !upstreams.lock.json

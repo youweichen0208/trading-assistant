@@ -14,6 +14,8 @@ def _schema(name, description, actions, properties):
 
 def register(ctx):
     install_secret_redaction()
+    from .finance import register_finance
+    register_finance(ctx)
     from .web import register_extract_provider
     register_extract_provider(ctx)
     ctx.register_middleware('tool_execution', tool_boundary)

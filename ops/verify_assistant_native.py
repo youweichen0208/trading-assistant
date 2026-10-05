@@ -106,6 +106,8 @@ def verify(checkout):
                                 pass
                         return content  # MCP results may carry Hermes' untrusted-text wrapper.
                 failed_submit = call('youwei_platform', {'action':'submit','arguments':{'ticker':'AAPL','horizon_td':20}})
+                for financial_tool in ('trading_price_history','trading_indicators','trading_financials'):
+                    assert call(financial_tool, {'symbol':'../bad', 'api_key':'forbidden'}) == {'error':'invalid_financial_arguments'}
                 assert isinstance(failed_submit, dict) and 'transport failure' in failed_submit['error'], failed_submit
                 for name in sorted(MCP_TOOLS):
                     cases = probe_queries(date(2026, 10, 4))
