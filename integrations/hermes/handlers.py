@@ -13,6 +13,11 @@ ALLOWED_TOOLS = BASE_TOOLS | MCP_TOOLS
 
 
 def tool_boundary(*, tool_name, args, next_call, session_id=None, turn_id=None, tool_call_id=None, **kwargs):
+    from .research import is_child, child_allowed, delegate
+    if is_child() and not child_allowed(tool_name, args, session_id):
+        return json.dumps({'error': 'research_child_tool_or_budget_denied'})
+    if tool_name == 'delegate_task':
+        return delegate(args, next_call, session_id, turn_id)
     if tool_name not in ALLOWED_TOOLS:
         return json.dumps({'error': 'tool is not allowed in the personal assistant'})
     if tool_name in MCP_TOOLS:

@@ -1,6 +1,6 @@
 """The single source of the personal assistant tool allowlist."""
 BASE_TOOLS = frozenset({'web_search', 'web_extract', 'memory', 'youwei_platform', 'youwei_knowledge',
-                       'trading_price_history', 'trading_indicators', 'trading_financials'})
+                       'delegate_task', 'web_search_batch', 'trading_analysis', 'trading_price_history', 'trading_indicators', 'trading_financials'})
 # Release scope: deployed seven-tool baseline plus the two purchased Marketplace tools.
 # The extended-plan experiment remains archived at d9f69c5; it is not enabled here.
 EODHD_TOOLS = frozenset({

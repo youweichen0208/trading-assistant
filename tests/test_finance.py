@@ -70,7 +70,8 @@ def test_registered_handlers_validate_arguments():
         def register_tool(self, **kwargs):
             registered[kwargs['name']] = kwargs
     register_finance(Context())
-    assert len(registered) == 3
+    assert len(registered) == 4
+    assert 'trading_analysis' in registered
     for tool in registered.values():
         assert tool['schema']['parameters']['additionalProperties'] is False
         assert json.loads(tool['handler']({'symbol':'../x','api_key':'secret'}))['error'] == 'invalid_financial_arguments'

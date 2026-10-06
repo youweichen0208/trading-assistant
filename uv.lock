@@ -522,7 +522,7 @@ dependencies = [
     { name = "yfinance" },
 ]
 wheels = [
-    { filename = "trading_core-0.1.0-py3-none-any.whl", hash = "sha256:e5a9b0061bff4c1193614a9d7d1d723d452b72e349633fc7ee1340c6c4eb0ed1" },
+    { filename = "trading_core-0.1.0-py3-none-any.whl", hash = "sha256:67773eebd96592ad9169c80746a09c6d5bcb791b38c728a1d539b6286d6d95ba" },
 ]
 
 [package.metadata]

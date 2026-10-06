@@ -22,7 +22,7 @@ def verify(live):
         results=[]
         symbols=['AAPL','MSFT','SPY'] if live else ['AAPL']
         for symbol in symbols:
-            for tool in ('trading_price_history','trading_indicators'):
+            for tool in ('trading_price_history','trading_indicators','trading_analysis'):
                 args=dict(symbol=symbol,start='2026-09-01' if live else '2025-01-01',end='2026-10-03' if live else '2025-02-01')
                 body=json.loads(handle_function_call(tool,args))
                 ok=('error' not in body and body.get('symbol')==symbol and
@@ -34,7 +34,7 @@ def verify(live):
             ok=('error' not in body and len(periods)>0 and any(p['metrics']['revenue']['value'] is not None for p in periods))
             results.append(dict(tool='trading_financials',symbol=symbol,status='passed' if ok else 'failed',result=body))
         if not live:
-            for name in ('trading_price_history','trading_indicators','trading_financials'):
+            for name in ('trading_price_history','trading_indicators','trading_financials','trading_analysis'):
                 assert json.loads(handle_function_call(name,{'symbol':'../x','api_key':'secret'}))['error']=='invalid_financial_arguments'
             from tools.interrupt import set_interrupt
             set_interrupt(True)

@@ -3,7 +3,7 @@ import json
 import sys
 import httpx
 import pandas as pd
-from trading_core import PriceQuery, FinancialQuery, get_price_history, get_indicators, get_financials
+from trading_core import PriceQuery, FinancialQuery, get_price_history, get_indicators, get_financials, get_analysis
 
 
 class Yahoo:
@@ -30,5 +30,5 @@ operation,args=request['operation'],request['arguments']
 if operation=='financials':
     result=get_financials(FinancialQuery(**args),user_agent='fixture test@example.com',transport=httpx.MockTransport(sec))
 else:
-    result=(get_price_history if operation=='price_history' else get_indicators)(PriceQuery(**args),ticker_factory=lambda symbol:Yahoo())
+    result={'price_history':get_price_history,'indicators':get_indicators,'analysis':get_analysis}[operation](PriceQuery(**args),ticker_factory=lambda symbol:Yahoo())
 print(json.dumps(result))
